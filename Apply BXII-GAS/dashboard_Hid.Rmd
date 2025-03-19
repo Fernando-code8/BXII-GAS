@@ -1,0 +1,178 @@
+---
+title: "Average monthly river flow from hydroelectric plants"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    theme: cerulean
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(readr)
+library(ggplot2)
+library(tidyverse)
+library(zoo)
+library(plotly)
+library(dplyr)
+library(stringr)
+
+load("app_hid-FORECAST1step.RData")
+load("app_hid.RData")
+nome<-c("14 DE JULHO","BARRA GRANDE","CAMPOS NOVOS", 
+        "CASTRO ALVES","D. FRANCISCA","ERNESTINA",    
+        "FUNDÃO","ITAUBA","JACUI","MONJOLINHO",  
+        "MONTE CLARO","PASSO FUNDO","PASSO REAL",                      "QUEBRA QUEIXO","SALTO PILAO","SAO JOSE")
+colnames(dados)<-nome
+
+```
+
+Plots
+=====================================    
+Inputs {.sidebar}
+---
+```{r}
+inputPanel(
+selectInput("HydPlants", label = "Select one hydroelectric plants to visualize", choices = sort(nome), selected = "14 DE JULHO")
+)
+
+```
+
+Column {}
+-----------------------------------------------------------------------
+
+### Observed RF and fitted values
+
+```{r}
+renderPlot({
+  j<-which(nome == input$HydPlants)
+  y<-na.omit(dados[,input$HydPlants])
+  s<-12
+  h=12
+  y <- zoo(y, order.by = datas)
+  y <- aggregate(y, as.yearmon, mean)
+  y<-y/1000
+  y<-ts(y[1:(length(y)-h)],frequency = s,start=c(2010,1))
+  y[y==0] <- mean(y, na.rm = TRUE)
+  
+  plot(y,main="",ylim=c(min(y),max(y)+0.25),ylab="RF")
+    lines(ts(final[[j]]$fitted,frequency = 12,start = c(2010,1)), col=2,lty=2,lwd=2)
+    lines(ts(final_Ray[[j]]$fitted,frequency = 12,start = c(2010,1)),col=5,lty=3,lwd=1.7)
+    lines(final_GAMMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
+    legend("top",
+        c("Original","BXII-GAS","Ray-GAS","gamma-GAS"), 
+        col = c(1,2,5,6), 
+        lty= c(1,2,3,4), 
+        lwd = c(1,2,1.7,1.6), 
+        bty="n", cex = 1)
+})
+
+```
+
+### Out-of-sample BXII-GAS forecasts 1-step ahead, updated by actual observations
+
+```{r}
+renderPlot({
+  j<-which(nome == input$HydPlants)
+  h=12
+  s=12
+  y_prev<-get(paste0("y_prev",j))
+  plot(ts(y_prev,frequency = s,start =c(2023,9)),
+       ylab="RF",ylim=c(min(y_prev,out_forecast[,1,j]),max(y_prev,out_forecast[,1,j])))
+  lines(ts(out_forecast[,1,j],frequency = s,start = c(2023,9)),col=2,lty=2,lwd=2)
+  legend("topright", 
+           c("BXII-GAS"),
+           col = c(2),
+           lty= c(2),
+           lwd = c(2), bty="n", cex = 1)
+})
+```
+
+Column {}
+-----------------------------------------------------------------------
+### Monthplot for the RF time series
+
+```{r}
+renderPlot({
+  j<-which(nome == input$HydPlants)
+  y<-na.omit(dados[,input$HydPlants])
+  s<-12
+  h=12
+  y <- zoo(y, order.by = datas)
+  y <- aggregate(y, as.yearmon, mean)
+  y<-y/1000
+  y<-ts(y[1:(length(y)-h)],frequency = s,start=c(2010,1))
+  y[y==0] <- mean(y, na.rm = TRUE)
+  
+  monthplot(y,main="",ylab="RF")
+})
+```
+
+### Autocorrelation function (ACF) of the BXII-GAS residual
+
+```{r}
+renderPlot({
+  j<-which(nome == input$HydPlants)
+  acf(final[[j]]$residuals,main="")
+})
+
+```
+
+Tables
+=====================================  
+
+### Information criteria and accuracy measures
+
+```{r}
+resultados<-cbind(nome,results)
+colnames(resultados)<-c("hydroelectric plants","AIC-BXII","AIC-RAy","AIC-GAMMA"
+                  ,"MAE-BXII","MAE-Ray","MAE-GAMMA"
+                  ,"MAPE-BXII","MAPE-Ray","MAPE-GAMMA"
+                  ,"RMSE-BXII","RMSE-Ray","RMSE-GAMMA"
+                  ,"pv-LB-BXII","pv-LB-Ray","pv-LB-GAMMA"
+                  )
+renderTable(resultados)
+```
+
+
+### Forecasting performance comparison
+
+```{r}
+resultados1<-cbind(nome,results_out)
+colnames(resultados1)<-c("hydroelectric plants","MAE-BXII","MAE-Ray","MAE-GAMMA"
+                  ,"RMSE-BXII","RMSE-Ray","RMSE-GAMMA"
+                  ,"MAPE-BXII","MAPE-Ray","MAPE-GAMMA"
+                  )
+renderTable(resultados1)
+```
+
+About
+=====================================
+**Goals**
+
+
+**The data**
+
+
+
+**Source files**
+
+
+**Author**
+
+***Name:*** Fernando José Monteiro de Araújo
+
+***Filiation:*** Universidade Federal do Rio Grande do Sul - UFRGS, Departamento de Estatı́stica.
+
+***Email:*** fernando.monteiro@ufrgs.br
+
+***Orcid ID:***
+
+***Scopus Author ID:*** 
+
+***ResearcherID (Publons):*** 
+
+**Reference**
+
+
