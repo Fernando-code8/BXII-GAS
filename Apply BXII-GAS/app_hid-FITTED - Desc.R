@@ -16,7 +16,7 @@ w1<-10 # width for plots
 h11<-6 # height for plots
 
 ## Data
-Dados <- read.delim("C:/Users/fernando.monteiro/Downloads/UG-GAS e BXII-GAS 20241120-20241217T004454Z-001-20250228T054140Z-001/UG-GAS e BXII-GAS 20241120-20241217T004454Z-001/UG-GAS e BXII-GAS 20241120/Scripts Atual BXII-GAS/Apply BXII-GAS/Data/Dados.txt")
+Dados <- read.delim("~/GitHub/BXII-GAS/Apply BXII-GAS/Data/Dados.txt")
 dados<-Dados
 dados <- dados %>% filter(X == "Selecione Tipo DH")
 dados<-as.data.frame(dados[,-2])
@@ -39,34 +39,17 @@ data<-dados
 data<-data[,-c(3,4,7)]
 
 # Table of descriptive measures
-i=4
-dat <-data[,i]
+i=5
+dat <-data[,i]/1000
 dat <- zoo(dat, order.by = datas)
 dat <- aggregate(dat, as.yearmon, mean)
 dat<-ts(dat,start = c(2010,1),frequency = 12)
 
 a<-c(summary(dat,na.rm=T),
-     var(dat,na.rm=T))
-round(a,4)
+     sd(dat,na.rm=T),(sd(dat,na.rm=T)/summary(dat,na.rm=T)[4])*100)
+a<-round(a[c(1,3,4,6,7,8)],4)
 a<-as.matrix(t(a))
 xtable(a,digits = 4)
 
 min1<-a[1]
 ids<-which(dat==min1)
-
-Sul<-rowMeans(data,na.rm=T)
-Sul.ts<-ts(Sul,start = c(2010,1), frequency = 12)
-y <- zoo(Sul.ts, order.by = datas)
-y <- aggregate(y, as.yearmon, mean)
-y<-y#/1000
-# ---------------------------------
-# seasonality
-setwd("C:/Users/fernando.monteiro/Downloads/UG-GAS e BXII-GAS 20241120-20241217T004454Z-001-20250228T054140Z-001/UG-GAS e BXII-GAS 20241120-20241217T004454Z-001/UG-GAS e BXII-GAS 20241120/Scripts Atual BXII-GAS/Apply BXII-GAS")
-months<-paste0("Plots/monthsS",".pdf")
-pdf(months,width = w1, height = h11)
-par(mfrow=c(1,1))
-monthplot(ts(y,start = c(2010,1), frequency = 12),main="",ylab = "RF")
-dev.off()
- 
-?monthplot()
-
