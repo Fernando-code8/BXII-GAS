@@ -39,17 +39,27 @@ data<-dados
 data<-data[,-c(3,4,7)]
 
 # Table of descriptive measures
-i=5
-dat <-data[,i]/1000
-dat <- zoo(dat, order.by = datas)
-dat <- aggregate(dat, as.yearmon, mean)
-dat<-ts(dat,start = c(2010,1),frequency = 12)
+cols <- 1:ncol(data)
+res_list <- list()
 
-a<-c(summary(dat,na.rm=T),
-     sd(dat,na.rm=T),(sd(dat,na.rm=T)/summary(dat,na.rm=T)[4])*100)
-a<-round(a[c(1,3,4,6,7,8)],4)
-a<-as.matrix(t(a))
-xtable(a,digits = 4)
+for (i in cols) {
+  
+  dat <- data[, i] / 1000
+  dat <- zoo(dat, order.by = datas)
+  dat <- aggregate(dat, as.yearmon, mean)
+  dat <- ts(dat, start = c(2010, 1), frequency = 12)
+  
+  a <- c(
+    summary(dat, na.rm = TRUE),
+    sd(dat, na.rm = TRUE),
+    (sd(dat, na.rm = TRUE) / summary(dat, na.rm = TRUE)[4]) * 100
+  )
+  
+  a <- round(a[c(1, 3, 4, 6, 7, 8)], 4)
+  
+  res_list[[colnames(data)[i]]] <- a
+}
 
-min1<-a[1]
-ids<-which(dat==min1)
+res_mat <- do.call(rbind, res_list)
+colnames(res_mat) <- c("Min", "1st Qu.", "Median", "Mean", "SD", "CV (%)")
+xtable(res_mat, digits = 4)
