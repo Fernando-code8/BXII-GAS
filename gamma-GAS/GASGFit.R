@@ -43,7 +43,7 @@ GGAS.fit <- function (y, ar, ma,X=NA, X_hat=NA, tau=0.5 ,link = "log", h1=1)
   if (linktemp == "log"){stats<-VGAM::loglink
   } else if (linktemp == "sqrt"){stats<-VGAM::sqrtlink
   } else {
-    stop(paste(linktemp, "link not available, available links are \"log\" and \"cloglog\""))
+    stop(paste(linktemp, "link not available, available links are \"log\" and \"sqrt\""))
   }
   
   link = linktemp 
@@ -220,11 +220,11 @@ GGAS.fit <- function (y, ar, ma,X=NA, X_hat=NA, tau=0.5 ,link = "log", h1=1)
   ynew_alphahat1 <- c(alphahat,rep(NA,h1))
   y_prev1[1:n] <- z$fitted
   
-  X_prev<- rbind(X,X_hat)
+  X_prev<- rbind(X,cbind(X_hat))
   
   for(i in 1:h1)
   {
-    ynew_fhatf1[n+i] <-  w + as.numeric(A%*%ynew_sthatf1[n-i-ar]) + as.numeric(B%*%ynew_fhatf1[n-i-ma]) +  X_prev[n+i,]%*%beta
+    ynew_fhatf1[n+i] <-  w + as.numeric(A%*%ynew_sthatf1[n+i-ar]) + as.numeric(B%*%ynew_fhatf1[n+i-ma]) +  X_prev[n+i,]%*%beta
     ynew_alphahat1[n+i]   <- linkinv(ynew_fhatf1[n+i])
     ynew_prev1[n+i] <- ynew_alphahat1[n+i]
     ynew_sthatf1[n+i] <- st.funcGGAS(ynew_alphahat1[n+i],ynew_prev1[n+i],lambda,tau,link=link)

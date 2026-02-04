@@ -1,12 +1,36 @@
 w1<-4 # width for plots 
 h11<-4 # height for plots
 
-setwd("C:/Users/fernando.monteiro/Downloads/UG-GAS e BXII-GAS 20241120-20241217T004454Z-001-20250228T054140Z-001/UG-GAS e BXII-GAS 20241120-20241217T004454Z-001/UG-GAS e BXII-GAS 20241120/Scripts Atual BXII-GAS/Apply BXII-GAS")
-j=i=16 # 1,4,5,11,12,13,16
+setwd("~/GitHub/BXII-GAS/Apply BXII-GAS")
+j=i=5 # 1,4,5,11,12,13,16
 resid_plot<-paste0("Plots/Acf",i,".pdf")
 pdf(resid_plot,width = w1, height = h11)
 # acf BXII residuals 
 acf(final[[j]]$residuals,main="")
+dev.off()
+
+
+n <- length(final[[j]]$residuals)
+t<-seq(-5,n+6,by=1)
+# res_indice
+res_indice<-paste0("Plots/res_indice",i,".pdf")
+pdf(res_indice,width = w1, height = h11)
+# resid vs index BXII residuals 
+#par(mar=c(5,6,4,1)+.1)
+plot(final[[j]]$residuals,xlab="Index",ylab="Residuals", pch = "+",ylim=c(-4,4))
+lines(t,rep(-3,n+12),lty=2,col=1)
+lines(t,rep(3,n+12),lty=2,col=1)
+lines(t,rep(-2,n+12),lty=3,col=1)
+lines(t,rep(2,n+12),lty=3,col=1)
+dev.off()
+
+# Acf plot
+Acf_plot<-paste0("Plots/Acf_plot",i,".pdf")
+pdf(Acf_plot,width =4, height = 4)
+# acf  
+par(mfrow=c(1,1))
+acf(y,main=nome[j]#,main=""
+)
 dev.off()
 
 # 1,4,5,11,12,13,16
@@ -17,23 +41,33 @@ j=i=16
 y_prev<-get(paste0("y_prev",j))
 y_prev<-ts(y_prev,frequency = s,start=c(2023,9))
 forecast<-paste0("Plots/forecast",i,".pdf")
-pdf(forecast,width = w1*2, height = h11)
-plot(y_prev,ylab="RF",ylim=c(min(y_prev,out_forecast[,1,j]),0.15+max(y_prev,out_forecast[,1,j])),type = "l")
+pdf(forecast,width = w1, height = h11)
+plot(y_prev,ylab="RF",ylim=c(min(y_prev,out_forecast[,1,j]),max(y_prev,out_forecast[,1,j])+0.15),type = "l")
 lines(ts(out_forecast[,1,j],frequency = s,start=c(2023,9)),col=2,lty=2,lwd=2)
-legend("topright", 
-       c("BXII-GAS"),
-       col = c(2),
-       lty= c(2),
-       lwd = c(2), bty="n", cex = 1)
+# lines(ts(out_forecast[,2,j],frequency = s,start=c(2023,9)),col=4,lty=4,lwd=1.6)
+legend("topleft", 
+       c("BXII-GAS"#,"Ray-GAS"
+         ),
+       col = c(2#,4
+               ),
+       lty= c(2#,4
+              ),
+       lwd = c(2#,1.6
+               ), bty="n", cex = 1.5)
 dev.off()
 
 # 1,2,11,12,16
 ########################################################
 
-j=16
+j=5
 # data<-final[[j]]$model[,c(1,2)]
 # data<-final_Ray[[j]]$model[,c(1,2)]
-data<-final_GAMMA[[j]]$model[,c(1,2)]
+#data<-final_GAMMA[[j]]$model[,c(1,2)]
+#data<-finalBXIIARMA[[j]]$model[,c(1,2)]
+#data<-final_ARMA[[j]]
+#data<-final_SARMA[[j]]
+data<-final_ETS[[j]]
+data
 data<-round(data,3)
 
 # Função para formatar valores

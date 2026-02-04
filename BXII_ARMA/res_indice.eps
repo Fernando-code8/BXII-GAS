@@ -1,0 +1,1064 @@
+%!PS-Adobe-3.0
+%%DocumentNeededResources: font Times-Roman
+%%+ font Times-Bold
+%%+ font Times-Italic
+%%+ font Times-BoldItalic
+%%+ font Symbol
+%%DocumentMedia: a4 595 841 0 () ()
+%%Title: R Graphics Output
+%%Creator: R Software
+%%Pages: (atend)
+%%Orientation: Landscape
+%%BoundingBox: 154 277 442 565
+%%EndComments
+%%BeginProlog
+/bp  { gs sRGB 595.00 0 translate 90 rotate gs } def
+% begin .ps.prolog
+/gs  { gsave } bind def
+/gr  { grestore } bind def
+/ep  { showpage gr gr } bind def
+/m   { moveto } bind def
+/l  { rlineto } bind def
+/np  { newpath } bind def
+/cp  { closepath } bind def
+/f   { fill } bind def
+/o   { stroke } bind def
+/c   { newpath 0 360 arc } bind def
+/r   { 4 2 roll moveto 1 copy 3 -1 roll exch 0 exch rlineto 0 rlineto -1 mul 0 exch rlineto closepath } bind def
+/p1  { stroke } bind def
+/p2  { gsave bg fill grestore newpath } bind def
+/p3  { gsave bg fill grestore stroke } bind def
+/p6  { gsave bg eofill grestore newpath } bind def
+/p7  { gsave bg eofill grestore stroke } bind def
+/t   { 5 -2 roll moveto gsave rotate
+       1 index stringwidth pop
+       mul neg 0 rmoveto show grestore } bind def
+/ta  { 4 -2 roll moveto gsave rotate show } bind def
+/tb  { 2 -1 roll 0 rmoveto show } bind def
+/cl  { grestore gsave newpath 3 index 3 index moveto 1 index
+       4 -1 roll lineto  exch 1 index lineto lineto
+       closepath clip newpath } bind def
+/rgb { setrgbcolor } bind def
+/s   { scalefont setfont } bind def
+% end   .ps.prolog
+/sRGB { [ /CIEBasedABC
+          << /DecodeLMN
+               [ { dup 0.03928 le
+                        {12.92321 div}
+                        {0.055 add 1.055 div 2.4 exp }
+                     ifelse
+                 } bind dup dup
+               ]
+             /MatrixLMN [0.412457 0.212673 0.019334
+                         0.357576 0.715152 0.119192
+                         0.180437 0.072175 0.950301]
+             /WhitePoint [0.9505 1.0 1.0890]
+           >>
+         ] setcolorspace } bind def
+/srgb { setcolor } bind def
+% begin encoding
+/WinAnsiEncoding [
+ /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+ /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+ /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+ /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+ /space /exclam /quotedbl /numbersign /dollar /percent /ampersand /quoteright
+ /parenleft /parenright /asterisk /plus /comma /minus /period /slash
+ /zero /one /two /three /four /five /six /seven
+ /eight /nine /colon /semicolon /less /equal /greater /question
+ /at /A /B /C /D /E /F /G
+ /H /I /J /K /L /M /N /O
+ /P /Q /R /S /T /U /V /W
+ /X /Y /Z /bracketleft /backslash /bracketright /asciicircum /underscore
+ /grave /a /b /c /d /e /f /g
+ /h /i /j /k /l /m /n /o
+ /p /q /r /s /t /u /v /w
+ /x /y /z /braceleft /bar /braceright /asciitilde /.notdef
+ /Euro /.notdef /quotesinglbase /florin /quotedblbase /ellipsis /dagger /daggerdbl
+ /circumflex /perthousand /Scaron /guilsinglleft /OE /.notdef /Zcaron /.notdef
+ /.notdef /quoteleft /quoteright /quotedblleft /quotedblright /bullet /endash /emdash
+ /tilde /trademark /scaron /guilsinglright /oe /.notdef /zcaron /Ydieresis
+ /space /exclamdown /cent /sterling /currency /yen /brokenbar /section
+ /dieresis /copyright /ordfeminine /guillemotleft /logicalnot /hyphen /registered /macron
+ /degree /plusminus /twosuperior /threesuperior /acute /mu /paragraph /periodcentered
+ /cedilla /onesuperior /ordmasculine /guillemotright /onequarter /onehalf /threequarters /questiondown
+ /Agrave /Aacute /Acircumflex /Atilde /Adieresis /Aring /AE /Ccedilla
+ /Egrave /Eacute /Ecircumflex /Edieresis /Igrave /Iacute /Icircumflex /Idieresis
+ /Eth /Ntilde /Ograve /Oacute /Ocircumflex /Otilde /Odieresis /multiply
+ /Oslash /Ugrave /Uacute /Ucircumflex /Udieresis /Yacute /Thorn /germandbls
+ /agrave /aacute /acircumflex /atilde /adieresis /aring /ae /ccedilla
+ /egrave /eacute /ecircumflex /edieresis /igrave /iacute /icircumflex /idieresis
+ /eth /ntilde /ograve /oacute /ocircumflex /otilde /odieresis /divide
+ /oslash /ugrave /uacute /ucircumflex /udieresis /yacute /thorn /ydieresis
+]
+ def
+% end encoding
+%%IncludeResource: font Times-Roman
+/Times-Roman findfont
+dup length dict begin
+  {1 index /FID ne {def} {pop pop} ifelse} forall
+  /Encoding WinAnsiEncoding def
+  currentdict
+  end
+/Font1 exch definefont pop
+%%IncludeResource: font Times-Bold
+/Times-Bold findfont
+dup length dict begin
+  {1 index /FID ne {def} {pop pop} ifelse} forall
+  /Encoding WinAnsiEncoding def
+  currentdict
+  end
+/Font2 exch definefont pop
+%%IncludeResource: font Times-Italic
+/Times-Italic findfont
+dup length dict begin
+  {1 index /FID ne {def} {pop pop} ifelse} forall
+  /Encoding WinAnsiEncoding def
+  currentdict
+  end
+/Font3 exch definefont pop
+%%IncludeResource: font Times-BoldItalic
+/Times-BoldItalic findfont
+dup length dict begin
+  {1 index /FID ne {def} {pop pop} ifelse} forall
+  /Encoding WinAnsiEncoding def
+  currentdict
+  end
+/Font4 exch definefont pop
+%%IncludeResource: font Symbol
+/Symbol findfont
+dup length dict begin
+  {1 index /FID ne {def} {pop pop} ifelse} forall
+  currentdict
+  end
+/Font5 exch definefont pop
+%%EndProlog
+%%Page: 1 1
+bp
+364.78 227.08 549.10 382.60 cl
+/Font1 findfont 12 s
+0 0 0 srgb
+371.61 423.49 (+) .5 0 t
+372.68 384.65 (+) .5 0 t
+373.74 378.67 (+) .5 0 t
+374.81 355.00 (+) .5 0 t
+375.88 321.32 (+) .5 0 t
+376.94 406.19 (+) .5 0 t
+378.01 316.49 (+) .5 0 t
+379.08 373.97 (+) .5 0 t
+380.14 369.06 (+) .5 0 t
+381.21 400.87 (+) .5 0 t
+382.28 448.07 (+) .5 0 t
+383.34 417.15 (+) .5 0 t
+384.41 349.40 (+) .5 0 t
+385.48 326.91 (+) .5 0 t
+386.54 431.88 (+) .5 0 t
+388.68 370.23 (+) .5 0 t
+389.74 305.80 (+) .5 0 t
+390.81 308.32 (+) .5 0 t
+391.88 299.60 (+) .5 0 t
+392.94 334.56 (+) .5 0 t
+395.08 417.48 (+) .5 0 t
+396.14 372.97 (+) .5 0 t
+397.21 307.83 (+) .5 0 t
+398.28 357.14 (+) .5 0 t
+401.48 400.60 (+) .5 0 t
+403.61 335.28 (+) .5 0 t
+404.68 305.11 (+) .5 0 t
+405.74 381.06 (+) .5 0 t
+406.81 419.45 (+) .5 0 t
+407.88 413.55 (+) .5 0 t
+410.01 334.20 (+) .5 0 t
+411.08 353.44 (+) .5 0 t
+413.21 430.35 (+) .5 0 t
+415.34 335.71 (+) .5 0 t
+416.41 324.71 (+) .5 0 t
+417.48 336.00 (+) .5 0 t
+418.54 328.35 (+) .5 0 t
+419.61 421.42 (+) .5 0 t
+420.68 335.59 (+) .5 0 t
+421.74 438.37 (+) .5 0 t
+422.81 379.48 (+) .5 0 t
+423.88 375.83 (+) .5 0 t
+426.01 327.96 (+) .5 0 t
+427.08 325.42 (+) .5 0 t
+428.14 400.49 (+) .5 0 t
+429.21 386.30 (+) .5 0 t
+430.28 310.50 (+) .5 0 t
+431.34 352.37 (+) .5 0 t
+432.41 377.38 (+) .5 0 t
+433.48 374.05 (+) .5 0 t
+434.54 340.56 (+) .5 0 t
+435.61 412.19 (+) .5 0 t
+436.68 404.83 (+) .5 0 t
+438.81 449.57 (+) .5 0 t
+439.88 292.37 (+) .5 0 t
+442.01 373.69 (+) .5 0 t
+443.08 305.88 (+) .5 0 t
+444.14 352.02 (+) .5 0 t
+445.21 309.07 (+) .5 0 t
+446.28 420.77 (+) .5 0 t
+447.34 389.69 (+) .5 0 t
+448.41 408.47 (+) .5 0 t
+449.48 327.52 (+) .5 0 t
+450.54 316.04 (+) .5 0 t
+452.68 343.42 (+) .5 0 t
+453.74 369.66 (+) .5 0 t
+455.88 300.31 (+) .5 0 t
+456.94 345.16 (+) .5 0 t
+458.01 416.62 (+) .5 0 t
+459.08 326.09 (+) .5 0 t
+460.14 445.01 (+) .5 0 t
+461.21 412.59 (+) .5 0 t
+463.34 439.97 (+) .5 0 t
+464.41 282.09 (+) .5 0 t
+465.48 368.77 (+) .5 0 t
+466.54 355.04 (+) .5 0 t
+468.68 340.36 (+) .5 0 t
+469.74 343.14 (+) .5 0 t
+470.81 416.73 (+) .5 0 t
+471.88 327.24 (+) .5 0 t
+472.94 442.19 (+) .5 0 t
+474.01 382.43 (+) .5 0 t
+475.08 418.34 (+) .5 0 t
+478.28 362.83 (+) .5 0 t
+479.34 394.96 (+) .5 0 t
+480.41 357.06 (+) .5 0 t
+481.48 343.31 (+) .5 0 t
+482.54 325.12 (+) .5 0 t
+483.61 338.47 (+) .5 0 t
+484.68 339.09 (+) .5 0 t
+485.74 391.59 (+) .5 0 t
+486.81 397.88 (+) .5 0 t
+488.94 343.48 (+) .5 0 t
+490.01 370.99 (+) .5 0 t
+491.08 308.71 (+) .5 0 t
+492.14 401.56 (+) .5 0 t
+495.34 286.30 (+) .5 0 t
+496.41 365.12 (+) .5 0 t
+497.48 351.51 (+) .5 0 t
+498.54 340.17 (+) .5 0 t
+499.61 348.55 (+) .5 0 t
+503.88 335.94 (+) .5 0 t
+504.94 343.21 (+) .5 0 t
+506.01 311.38 (+) .5 0 t
+507.08 321.97 (+) .5 0 t
+510.28 436.26 (+) .5 0 t
+511.34 325.35 (+) .5 0 t
+512.41 322.56 (+) .5 0 t
+515.61 356.68 (+) .5 0 t
+516.68 359.33 (+) .5 0 t
+518.81 379.96 (+) .5 0 t
+519.88 316.10 (+) .5 0 t
+520.94 315.88 (+) .5 0 t
+522.01 368.18 (+) .5 0 t
+523.08 374.97 (+) .5 0 t
+527.34 439.44 (+) .5 0 t
+528.41 313.35 (+) .5 0 t
+529.48 332.79 (+) .5 0 t
+530.54 308.49 (+) .5 0 t
+531.61 395.44 (+) .5 0 t
+532.68 318.44 (+) .5 0 t
+534.81 331.34 (+) .5 0 t
+538.01 352.88 (+) .5 0 t
+542.28 299.58 (+) .5 0 t
+276.94 153.64 564.94 441.64 cl
+0 0 0 srgb
+0.75 setlinewidth
+[] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+np
+370.54 227.08 m
+160.00 0 l
+o
+np
+370.54 227.08 m
+0 -7.20 l
+o
+np
+423.88 227.08 m
+0 -7.20 l
+o
+np
+477.21 227.08 m
+0 -7.20 l
+o
+np
+530.54 227.08 m
+0 -7.20 l
+o
+/Font1 findfont 12 s
+370.54 201.16 (0) .5 0 t
+423.88 201.16 (50) .5 0 t
+477.21 201.16 (100) .5 0 t
+530.54 201.16 (150) .5 0 t
+np
+364.78 232.84 m
+0 144.00 l
+o
+np
+364.78 232.84 m
+-7.20 0 l
+o
+np
+364.78 268.84 m
+-7.20 0 l
+o
+np
+364.78 304.84 m
+-7.20 0 l
+o
+np
+364.78 340.84 m
+-7.20 0 l
+o
+np
+364.78 376.84 m
+-7.20 0 l
+o
+347.50 232.84 (-4) .5 90 t
+347.50 268.84 (-2) .5 90 t
+347.50 304.84 (0) .5 90 t
+347.50 340.84 (2) .5 90 t
+347.50 376.84 (4) .5 90 t
+np
+ 364.78 227.08 m
+184.32 0 l
+0 155.52 l
+-184.32 0 l
+cp p1
+276.94 153.64 564.94 441.64 cl
+/Font2 findfont 14 s
+0 0 0 srgb
+456.94 407.39 ( ) .5 0 t
+/Font1 findfont 12 s
+443.28 172.36 (Inde) 0 ta
+-0.180 (x) tb gr
+318.70 304.84 (Residuals) .5 90 t
+364.78 227.08 549.10 382.60 cl
+0 0 0 srgb
+0.75 setlinewidth
+[ 2.25 3.75] 0 setdash
+1 setlinecap
+1 setlinejoin
+10.00 setmiterlimit
+np
+365.21 250.84 m
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+471.88 250.84 lineto
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+o
+np
+365.21 358.84 m
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+471.88 358.84 lineto
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+o
+0.75 setlinewidth
+[ 0.00 3.00] 0 setdash
+np
+365.21 268.84 m
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+471.88 268.84 lineto
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+o
+np
+365.21 340.84 m
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+471.88 340.84 lineto
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+1.06 0 l
+1.07 0 l
+1.07 0 l
+o
+ep
+%%Trailer
+%%Pages: 1
+%%EOF

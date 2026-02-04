@@ -13,3 +13,4 @@ ut=(1+mu^c)
 ht= log(1-tau)/log(ut)
 
 ((-c*mu^(c-1))/(ut*log(ut)))*(1+(ht*log(1+y^c)))
+

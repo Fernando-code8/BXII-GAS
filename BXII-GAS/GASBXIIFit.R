@@ -43,7 +43,7 @@ BXIIGAS.fit <- function (y, ar, ma,X=NA, X_hat=NA, tau=0.5 ,link = "log", h1=1)
   if (linktemp == "log"){stats<-VGAM::loglink
   } else if (linktemp == "sqrt"){stats<-VGAM::sqrtlink
   } else {
-    stop(paste(linktemp, "link not available, available links are \"log\" and \"cloglog\""))
+    stop(paste(linktemp, "link not available, available links are \"log\" and \"sqrt\""))
   }
   
   link = linktemp 
@@ -96,10 +96,23 @@ BXIIGAS.fit <- function (y, ar, ma,X=NA, X_hat=NA, tau=0.5 ,link = "log", h1=1)
     sum(ll)
   } 
 
+  score.func <- function(z){
+    w <- z[1]
+    A <- z[2:(p1+1)]
+    B <- z[(p1+2):(p1+q1+1)]
+    if(k==0)  {
+      beta <- as.matrix(0)
+      X<-NA
+    } else beta <- as.matrix(z[(p1+q1+2):(p1+q1+1+k)])
+    c <- z[p1+q1+k+2]
+    
+    BXIIGAS.score(w,A=A,B=B,beta=beta,c,y,tau=.5,
+                ar=ar,ma=ma,X=X,link = "log")
+  }
   
   opt <- try(
     optim(c(rep(0,(p1+q1+k+2)))
-          , loglik, #score.func, 
+          , loglik,# score.func, 
           method = "BFGS", hessian = T,
           control = list(fnscale = -1, maxit = maxit1, reltol = 1e-12))
     ,silent = T)
@@ -219,11 +232,11 @@ BXIIGAS.fit <- function (y, ar, ma,X=NA, X_hat=NA, tau=0.5 ,link = "log", h1=1)
   ynew_muhatf1 <- c(muhat,rep(NA,h1))
   y_prev1[1:n] <- z$fitted
   
-  X_prev<- rbind(X,X_hat)
+  X_prev<- rbind(X,cbind(X_hat))
   
   for(i in 1:h1)
   {
-    ynew_fhatf1[n+i] <-  w + as.numeric(A%*%ynew_sthatf1[n-i-ar]) + as.numeric(B%*%ynew_fhatf1[n-i-ma]) +  X_prev[n+i,]%*%beta
+    ynew_fhatf1[n+i] <-  w + as.numeric(A%*%ynew_sthatf1[n+i-ar]) + as.numeric(B%*%ynew_fhatf1[n+i-ma]) +  X_prev[n+i,]%*%beta
     ynew_muhatf1[n+i]   <- linkinv(ynew_fhatf1[n+i])
     ynew_prev1[n+i] <- ynew_muhatf1[n+i]
     ynew_sthatf1[n+i] <- st.funcBXII(ynew_muhatf1[n+i],ynew_prev1[n+i],c,tau,link=link)

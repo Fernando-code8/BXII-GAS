@@ -24,7 +24,7 @@ st.funcGGAS <- function(alpha0,y1,lambda,tau,link="log"){
   diflink<-function(x)stats(x,inverse = F,deriv = 1)
   ########################
   d=1
-  St<-alpha0^d*((y1/lambda)-1)
+  St<-alpha0^d*((y1/(lambda))-1)
   St*diflink(alpha0)
   # St<-alpha0*(log(y1)-log(lambda)+psigamma(alpha0, deriv = 1))*(alpha0^2)*psigamma(alpha0, deriv = 2)
   # St
