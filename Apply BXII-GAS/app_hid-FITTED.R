@@ -47,10 +47,10 @@ Desc<-describe(dados)
 Desc
 
 #Fitted
-dados<-dados[,-c(11,21,30:33)]
-dados<-dados[,-c(7,9:11,14:15,21:22,24:25,27)]
-dados<-dados[,-c(3,5:9,13,15)]
-dados<-dados[,-c(3,4,7)]
+#dados<-dados[,-c(11,21,30:33)]
+#dados<-dados[,-c(7,9:11,14:15,21:22,24:25,27)]
+#dados<-dados[,-c(3,5:9,13,15)]
+#dados<-dados[,-c(3,4,7)]
 
 
 datas <- seq(as.Date("2010-01-01"), as.Date("2024-08-31"), by = "day")
@@ -484,7 +484,14 @@ for(i in R){
   
   pv_LB_BXII1<-Box.test(final1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_Ray1<-Box.test(final_Ray1$residuals, lag = 20, type = "Ljung")$p.value
-  pv_LB_GAMMA1<-Box.test(final_GAMMA1$residuals, lag = 20, type = "Ljung")$p.value
+  pv_LB_GAMMA1 <- try(
+    Box.test(final_GAMMA1$residuals, lag = 20, type = "Ljung")$p.value,
+    silent = TRUE
+  )
+  
+  if (inherits(pv_LB_GAMMA1, "try-error")) {
+    pv_LB_GAMMA1 <- NA
+  }
   pv_LB_BXIIARMA1<-Box.test(finalBXIIARMA1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_ETS1<-Box.test(final_ETS1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_ARMA1<-Box.test(final_ARMA1$residuals, lag = 20, type = "Ljung")$p.value
@@ -516,7 +523,14 @@ for(i in R){
     print(nome[j])
     pv_LB_BXII[j]<-Box.test(final1$residuals, lag = 20, type = "Ljung")$p.value
     pv_LB_Ray[j]<-Box.test(final_Ray1$residuals, lag = 20, type = "Ljung")$p.value
-    pv_LB_GAMMA[j]<-Box.test(final_GAMMA1$residuals, lag = 20, type = "Ljung")$p.value
+    pv_LB_GAMMA[j] <- try(
+      Box.test(final_GAMMA1$residuals, lag = 20, type = "Ljung")$p.value,
+      silent = TRUE
+    )
+    
+    if (inherits(pv_LB_GAMMA[j], "try-error")) {
+      pv_LB_GAMMA[j] <- NA
+    }
     pv_LB_BXIIARMA[j]<-Box.test(finalBXIIARMA1$residuals, lag = 20, type = "Ljung")$p.value
     pv_LB_ETS[j]<-Box.test(final_ETS1$residuals, lag = 20, type = "Ljung")$p.value
     pv_LB_ARMA[j]<-Box.test(final_ARMA1$residuals, lag = 20, type = "Ljung")$p.value
@@ -524,7 +538,20 @@ for(i in R){
     
     acuracia1[1,j,]<-c(accuracy(final[[j]]$fitted, y)[,c(2,3,5)],final[[j]]$aic,final[[j]]$bic)
     acuracia1[2,j,]<-c(accuracy(final_Ray[[j]]$fitted, y)[,c(2,3,5)],final_Ray[[j]]$aic,final_Ray[[j]]$bic)
-    acuracia1[3,j,]<-c(accuracy(final_GAMMA[[j]]$fitted, y)[,c(2,3,5)],final_GAMMA[[j]]$aic,final_GAMMA[[j]]$bic)
+    if (!is.null(final_GAMMA[[j]]) &&
+        !is.null(final_GAMMA[[j]]$fitted)) {
+      
+      acuracia1[3, j, ] <- c(
+        accuracy(final_GAMMA[[j]]$fitted, y)[, c(2,3,5)],
+        final_GAMMA[[j]]$aic,
+        final_GAMMA[[j]]$bic
+      )
+      
+    } else {
+      
+      acuracia1[3, j, ] <- NA
+      
+    }
     acuracia1[4,j,]<-c(accuracy(finalBXIIARMA[[j]]$fitted, y)[,c(2,3,5)],finalBXIIARMA[[j]]$aic,finalBXIIARMA[[j]]$bic)
     acuracia1[5,j,]<-c(accuracy(final_ETS[[j]]$fitted, y)[,c(2,3,5)],final_ETS[[j]]$aic,final_ETS[[j]]$bic)
     acuracia1[6,j,]<-c(accuracy(final_ARMA[[j]]$fitted, y)[,c(2,3,5)],final_ARMA[[j]]$aic,final_ARMA[[j]]$bic)
@@ -561,15 +588,20 @@ for(i in R){
     # plot(y,main="")
     lines(final[[j]]$fitted, col=2,lty=2,lwd=2)
     lines(final_Ray[[j]]$fitted, col=5,lty=3,lwd=1.7)
-    lines(finalBXIIARMA[[j]]$fitted, col=4,lty=7,lwd=1.5)
-    lines(final_ETS[[j]]$fitted, col=7,lty=5,lwd=1.8)
-    lines(final_ARMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
-    lines(final_SARMA[[j]]$fitted, col=3,lty=6,lwd=1.9)
-    legend("topright", 
-           c("Original","BXII-GAS","Ray-GAS","BXII-ARMA","ETS","ARMA","SARMA"),
-           col = c(1,2,5,4,7,6,3),
-           lty= c(1,2,3,7,5,4,6),
-           lwd = c(1,2,1.7,1.5,1.8,1.6,1.9), bty="n", cex = 1)
+    lines(finalBXIIARMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
+    lines(final_SARMA[[j]]$fitted, col=7,lty=5,lwd=1.8)
+    #lines(final_ARMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
+    lines(final_ETS[[j]]$fitted, col=3,lty=6,lwd=1.9)
+    legend("topleft", 
+           c("Original","BXII-GAS","Ray-GAS","BXII-ARMA","SARMA",#"ARMA",
+             "ETS" 
+             ),
+           col = c(1,2,5,6,7,#6,
+                   3),
+           lty= c(1,2,3,4,5,#4,
+                  6),
+           lwd = c(1,2,1.7,1.6,1.8,#1.6,
+                   1.9), bty="n", cex = 1)
     dev.off()
     # ---------------------------------
     # seasonality
@@ -594,11 +626,15 @@ for(i in R){
     dev.off()
     
     # ---------------------------------
-    resid_plot<-paste0("Plots/resid_plotgamma",i,".pdf")
-    pdf(resid_plot,width = 4, height = 4)
-    # acf GAMMA residuals 
-    acf(final_GAMMA[[j]]$residuals,main="")
-    dev.off()
+    resid_plot <- paste0("Plots/resid_plotgamma", i, ".pdf")
+    if (!is.null(final_GAMMA[[j]]) &&
+        !is.null(final_GAMMA[[j]]$residuals) &&
+        length(final_GAMMA[[j]]$residuals) > 0) {
+      pdf(resid_plot, width = 4, height = 4)
+      acf(final_GAMMA[[j]]$residuals, main = "")
+      dev.off()
+      
+    }
     
     # ---------------------------------
     resid_plot<-paste0("Plots/resid_plotBXIIARMA",i,".pdf")
@@ -696,7 +732,7 @@ results<-data.frame(
   RMSE_SARMA=acuracia1[7,,1],
   pv_LB_BXII=round(pv_LB_BXII,4),
   pv_LB_Ray=round(pv_LB_Ray,4),
-  pv_LB_GAMMA=round(pv_LB_GAMMA,4),
+  #pv_LB_GAMMA=round(pv_LB_GAMMA,4,NA),
   pv_LB_BXIIARMA=round(pv_LB_BXIIARMA,4),
   pv_LB_ETS=round(pv_LB_ETS,4),
   pv_LB_ARMA=round(pv_LB_ARMA,4),
@@ -715,9 +751,9 @@ results[,c(4:7,11:14,18:21,25:28,32:35,39:42)]
 
 
 resultados<-results
-resultados[2,4]<-0
+#resultados[2,4]<-0
 resultados<-round(resultados,4)
-resultados[2,4]<-"_"
+#resultados[2,4]<-"_"
 library(gt)
 
 # Criar uma tabela estilizada
