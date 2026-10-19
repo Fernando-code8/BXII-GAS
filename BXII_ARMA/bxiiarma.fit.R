@@ -310,8 +310,8 @@ bxiiarma.fit<-function (y, ar = NA, ma = NA, X = NA,h1=6, tau = .5,diag1=0,
   z$serie <- y
   # z$barma <- names_par
   z$forecast <- y_prev[(n+1):(n+h1)]
-  setwd("~/GitHub/BXII-GAS/BXII_ARMA")
-  source('bxii-funcs.r')
+  setwd(file.path(path, "BXII_ARMA"))
+  source('bxii-funcs.R')
 
   residc <- z$resid3
   # residuals
