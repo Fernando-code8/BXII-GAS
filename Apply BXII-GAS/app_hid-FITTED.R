@@ -10,15 +10,23 @@ library(readr)
 library(xtable)
 library(VGAM)
 library(stats)
-setwd("~/GitHub/BXII-GAS/BXII-GAS")
+# GAS
+library("gasmodel")
+library(forecast)
+library(lmtest)
+
+# Main project folder
+path <- "~/Fernando/BXII-GAS"
+
+setwd(file.path(path, "BXII-GAS"))
 source("GASBXIIFit.R")
-setwd("~/GitHub/BXII-GAS/Ray-GAS/Ray-GAS-master/Ray-GAS")
+setwd(file.path(path, "Ray-GAS/Ray-GAS-master/Ray-GAS"))
 source("GASRayFit.R")
-setwd("~/GitHub/BXII-GAS/gamma-GAS")
+setwd(file.path(path, "gamma-GAS"))
 source("GASGFit.R")
-setwd("~/GitHub/BXII-GAS/BXII_ARMA")
-source("bxiiarmaCOV.fit.r")
-source("bxiiarma.fit.r")
+setwd(file.path(path, "BXII_ARMA"))
+source("bxiiarmaCOV.fit.R")
+source("bxiiarma.fit.R")
 
 
 ############################
@@ -28,7 +36,8 @@ w1<-8 # width for plots
 h11<-6 # height for plots
 
 ## Data
-Dados <- read.delim("~/GitHub/BXII-GAS/Apply BXII-GAS/Data/Dados.txt")
+setwd(file.path(path, "Apply BXII-GAS/Data"))
+Dados <- read.delim("Dados.txt")
 dados<-Dados
 dados <- dados %>% filter(X == "Selecione Tipo DH")
 dados<-as.data.frame(dados[,-2])
@@ -51,11 +60,20 @@ Desc
 #dados<-dados[,-c(7,9:11,14:15,21:22,24:25,27)]
 #dados<-dados[,-c(3,5:9,13,15)]
 #dados<-dados[,-c(3,4,7)]
-
+dados<-dados[,c(1,2,18,19,28)]
+View(dados)
 
 datas <- seq(as.Date("2010-01-01"), as.Date("2024-08-31"), by = "day")
 R<-1:dim(dados)[2]
 mat<-matrix(c(rep(1,1*4)),ncol=4,byrow=T)
+
+# IMPORTANT: Candidate grid for the gamma
+gamma_orders <- unique(data.frame(
+  p = pmax(mat[, 1], mat[, 2]),
+  q = pmax(mat[, 3], mat[, 4])
+))
+gamma_orders <- gamma_orders[order(gamma_orders$p, gamma_orders$q), , drop = FALSE]
+rownames(gamma_orders) <- NULL
 
 acuracia1<-array(NA,c(7,length(R),5))
 pv_LB_BXII<-pv_LB_Ray<-pv_LB_GAMMA<-pv_LB_BXIIARMA<-pv_LB_ETS<-pv_LB_ARMA<-pv_LB_SARMA<-
@@ -64,7 +82,9 @@ final<-final_Ray<-final_GAMMA<-finalBXIIARMA<-final_ETS<-final_ARMA<-final_SARMA
 start_time <- Sys.time()
 j<-0
 
-setwd("~/GitHub/BXII-GAS/Apply BXII-GAS")
+
+
+setwd(file.path(path, "Apply BXII-GAS"))
 for(i in R){
   ################################
   #### defining the variables ####
@@ -237,67 +257,76 @@ for(i in R){
   mingammasin<-mingammacos<-mingammasincos<-mingammas<-c()
   mingammasin2<-mingammacos2<-mingammasincos2<-mingammas2<-c()
   
+  
   ## Sin
-  for(l in 1:nrow(mat)
+  for(l in 1:nrow(gamma_orders)
   ){
     print(c(l,"gammasin"))
-    pq<-mat[l,]  
-    hidsin<-try(GGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],X=Xsin,X_hat=Xsin_hat,h1=1),silent=T)
-    if(class(hidsin)=="try-error" || hidsin$conv != 0 || sum(is.nan(hidsin$model[,4]))>0 || sum(is.infinite(hidsin$residuals))>0|| hidsin$conv != 0 || sum(is.nan(hidsin$model[,4]))>0 || sum(is.infinite(hidsin$residuals))>0){hidsin$aic<-.Machine$double.xmax}
-    mingammasin2[l]<-hidsin$aic
-    if(sum(hidsin$model[-1,4] < 0.11, na.rm = TRUE) < length(hidsin$model[-1,4])){hidsin$aic <- .Machine$double.xmax}
-    hidgammasin_l[[l]]<-hidsin
-    mingammasin[l]<-hidsin$aic
+    pq<-gamma_orders[l,]  
+    hidsin<-try(gas(as.numeric(y),
+                  x=Xsin,
+                  p=as.integer(pq[1]),
+                  q=as.integer(pq[2]),
+                  distr = "gamma",
+                  param = "scale",
+                  par_static = c(FALSE, TRUE),
+                  scaling = "fisher_inv"),silent=T)
+    
+    if(class(hidsin)=="try-error" || hidsin$control$optim_arguments$opts$xtol_rel != 0 || sum(sum(hidsin$fit$coef_pval[1:(length(hidsin$fit$coef_pval))]<0.05)==(length(hidsin$fit$coef_pval)))==0 || sum(is.infinite(hidsin$fit$resid_tv))>0){hidsin$fit$aic<-.Machine$double.xmax}
+    hidgammasin_l[[l]]<-hidsin$fit
+    mingammasin[l]<-hidsin$fit$aic
   }
   mingammasin1<-min(mingammasin)
   id_sin<-which(mingammasin==mingammasin1)
   if(length(id_sin)>1){
-    mingammasin3<-min(mingammasin2)
-    id_sin2<-which(mingammasin2==mingammasin3)
-    hidgammasin_final<-hidgammasin_l[[id_sin2]]
-    hidgammasin_final$aic<-mingammasin3
-  }else{hidgammasin_final<-hidgammasin_l[[id_sin]]}  
+    hidgammasin_final<-hidgammasin_l[[1]]
+  }else{hidgammasin_final<-hidgammasin_l[[id_sin]]}
+  
   
   ## Cos
-  for(l in 1:nrow(mat)
+  for(l in 1:nrow(gamma_orders)
   ){
     print(c(l,"gammacos"))
-    pq<-mat[l,]  
-    hidcos<-try(GGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],X=Xcos,X_hat=Xcos_hat,h1=1),silent=T)
-    if(class(hidcos)=="try-error" || hidcos$conv != 0 || sum(is.nan(hidcos$model[,4]))>0 || sum(is.infinite(hidcos$residuals))>0|| hidcos$conv != 0 || sum(is.nan(hidcos$model[,4]))>0 || sum(is.infinite(hidcos$residuals))>0){hidcos$aic<-.Machine$double.xmax}
-    mingammacos2[l]<-hidcos$aic
-    if(sum(hidcos$model[-1,4] < 0.11, na.rm = TRUE) < length(hidcos$model[-1,4])){hidcos$aic <- .Machine$double.xmax}
+    pq<-gamma_orders[l,]  
+    hidcos<-try(gas(as.numeric(y),
+                    x=Xsin,
+                    p=as.integer(pq[1]),
+                    q=as.integer(pq[2]),
+                    distr = "gamma",
+                    param = "scale",
+                    par_static = c(FALSE, TRUE),
+                    scaling = "fisher_inv"),silent=T)
+    if(class(hidcos)=="try-error" || hidsin$control$optim_arguments$opts$xtol_rel != 0 || sum(is.nan(hidcos$model[,4]))>0 || sum(is.infinite(hidcos$residuals))>0|| hidcos$conv != 0 || sum(is.nan(hidcos$model[,4]))>0 || sum(is.infinite(hidcos$residuals))>0){hidcos$aic<-.Machine$double.xmax}
     hidgammacos_l[[l]]<-hidcos
     mingammacos[l]<-hidcos$aic
   }
   mingammacos1<-min(mingammacos)
   id_cos<-which(mingammacos==mingammacos1)
   if(length(id_cos)>1){
-    mingammacos3<-min(mingammacos2)
-    id_cos2<-which(mingammacos2==mingammacos3)
-    hidgammacos_final<-hidgammacos_l[[id_cos2]]
-    hidgammacos_final$aic<-mingammacos3
+    hidgammacos_final<-hidgammacos_l[[1]]
   }else{hidgammacos_final<-hidgammacos_l[[id_cos]]}  
   
   ## Sin&Cos
-  for(l in 1:nrow(mat)
+  for(l in 1:nrow(gamma_orders)
   ){
     print(c(l,"gammasincos"))
-    pq<-mat[l,]  
-    hidsincos<-try(GGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],X=X,X_hat=X_hat,h1=1),silent=T)
-    if(class(hidsincos)=="try-error" || hidsincos$conv != 0 || sum(is.nan(hidsincos$model[,4]))>0 || sum(is.infinite(hidsincos$residuals))>0|| hidsincos$conv != 0 || sum(is.nan(hidsincos$model[,4]))>0 || sum(is.infinite(hidsincos$residuals))>0){hidsincos$aic<-.Machine$double.xmax}
-    mingammasincos2[l]<-hidsincos$aic
-    if(sum(hidsincos$model[-1,4] < 0.11, na.rm = TRUE) < length(hidsincos$model[-1,4])){hidsincos$aic <- .Machine$double.xmax}
+    pq<-gamma_orders[l,]  
+    hidsincos<-try(gas(as.numeric(y),
+                       x=Xsin,
+                       p=as.integer(pq[1]),
+                       q=as.integer(pq[2]),
+                       distr = "gamma",
+                       param = "scale",
+                       par_static = c(FALSE, TRUE),
+                       scaling = "fisher_inv"),silent=T)
+    if(class(hidsincos)=="try-error" || hidsincos$control$optim_arguments$opts$xtol_rel != 0 || sum(is.nan(hidsincos$model[,4]))>0 || sum(is.infinite(hidsincos$residuals))>0|| hidsincos$conv != 0 || sum(is.nan(hidsincos$model[,4]))>0 || sum(is.infinite(hidsincos$residuals))>0){hidsincos$aic<-.Machine$double.xmax}
     hidgammasincos_l[[l]]<-hidsincos
     mingammasincos[l]<-hidsincos$aic
   }
   mingammasincos1<-min(mingammasincos)
   id_sincos<-which(mingammasincos==mingammasincos1)
   if(length(id_sincos)>1){
-    mingammasincos3<-min(mingammasincos2)
-    id_sincos2<-which(mingammasincos2==mingammasincos3)
-    hidgammasincos_final<-hidgammasincos_l[[id_sincos2]]
-    hidgammasincos_final$aic<-mingammasincos3
+    hidgammasincos_final<-hidgammasincos_l[[1]]
   }else{hidgammasincos_final<-hidgammasincos_l[[id_sincos]]}  
   
   # ## sem cov
