@@ -65,24 +65,19 @@ View(dados)
 
 datas <- seq(as.Date("2010-01-01"), as.Date("2024-08-31"), by = "day")
 R<-1:dim(dados)[2]
+
 mat<-matrix(c(rep(1,1*4)),ncol=4,byrow=T)
+mat<-matrix(c(rep(1,3),rep(2,3),rep(3,3),rep(1:3,3)),ncol=2,byrow=F)
 
 # IMPORTANT: Candidate grid for the gamma
-gamma_orders <- unique(data.frame(
-  p = pmax(mat[, 1], mat[, 2]),
-  q = pmax(mat[, 3], mat[, 4])
-))
-gamma_orders <- gamma_orders[order(gamma_orders$p, gamma_orders$q), , drop = FALSE]
-rownames(gamma_orders) <- NULL
+gamma_orders <- mat
 
-acuracia1<-array(NA,c(7,length(R),5))
-pv_LB_BXII<-pv_LB_Ray<-pv_LB_GAMMA<-pv_LB_BXIIARMA<-pv_LB_ETS<-pv_LB_ARMA<-pv_LB_SARMA<-
+acuracia1<-array(NA,c(6,length(R),5))
+pv_LB_BXII<-pv_LB_Ray<-pv_LB_GAMMA<-pv_LB_BXIIARMA<-pv_LB_ETS<-pv_LB_SARMA<-
   nome<-modelo<-modelo_Ray<-modelo_GAMMA<-modeloBXIIARMA<-c()
-final<-final_Ray<-final_GAMMA<-finalBXIIARMA<-final_ETS<-final_ARMA<-final_SARMA<-list()
+final<-final_Ray<-final_GAMMA<-finalBXIIARMA<-final_ETS<-final_SARMA<-list()
 start_time <- Sys.time()
 j<-0
-
-
 
 setwd(file.path(path, "Apply BXII-GAS"))
 for(i in R){
@@ -111,400 +106,752 @@ for(i in R){
   #### fitting BXII-GAS ####
   ##########################
   
-  hidsin_l<-hidcos_l<-hidsincos_l<-hid_l<-list()
-  minBXIIsin<-minBXIIcos<-minBXIIsincos<-minBXIIs<-c()
+  hidsin_l<-hidcos_l<-hidsincos_l<-list()
   
-  ## Sin
+  aic_BXII_sin<-pv_LB_BXIIsin<-int_sig_BXIIsin<-model_sig_BXIIsin<-RMSE_BXIIsin<-MAPE_BXIIsin<-MAE_BXIIsin<-c()
+  aic_BXII_cos<-pv_LB_BXIIcos<-int_sig_BXIIcos<-model_sig_BXIIcos<-RMSE_BXIIcos<-MAPE_BXIIcos<-MAE_BXIIcos<-c()
+  aic_BXII_sincos<-pv_LB_BXIIsincos<-int_sig_BXIIsincos<-model_sig_BXIIsincos<-RMSE_BXIIsincos<-MAPE_BXIIsincos<-MAE_BXIIsincos<-c()
+  
   for(l in 1:nrow(mat)){
-    print(c(l,"BXIIsin"))
-    pq<-mat[l,]  
-    hidsin<-try(BXIIGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],X=Xsin,X_hat=Xsin_hat,h1=1),silent=T)
-    if(class(hidsin)=="try-error" || Box.test(hidsin$residuals, lag = 20, type = "Ljung")$p.value<0.05 || sum(sum(hidsin$model[-1,4]<0.11,na.rm = FALSE)< length(hidsin$model[-1,4])) > 0 || hidsin$conv != 0 || sum(is.nan(hidsin$model[,4]))>0 || sum(is.infinite(hidsin$residuals))>0){hidsin$aic<-.Machine$double.xmax}
-    hidsin_l[[l]]<-hidsin
-    minBXIIsin[l]<-hidsin$aic
-  }
-  
-  minBXIIsin1<-min(minBXIIsin)
-  id_sin<-which(minBXIIsin==minBXIIsin1)
-  if(length(id_sin)>1){hidsin_final<-hidsin_l[[1]]}else{hidsin_final<-hidsin_l[[id_sin]]}
-  
-  ## Cos
-  for(l in 1:nrow(mat)){
-    pq<-mat[l,]
-    print(c(l,"BXIIcos"))
-    hidcos<-try(BXIIGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],X=Xcos,X_hat=Xcos_hat,h1=1),silent=T)
-    if(class(hidcos)=="try-error" || Box.test(hidcos$residuals, lag = 20, type = "Ljung")$p.value<0.05 || sum(sum(hidcos$model[-1,4]<0.11,na.rm = FALSE)< length(hidcos$model[-1,4])) > 0 || hidcos$conv != 0 || sum(is.nan(hidcos$model[,4]))>0 || sum(is.infinite(hidcos$residuals))>0){hidcos$aic<-.Machine$double.xmax}
-    hidcos_l[[l]]<-hidcos
-    minBXIIcos[l]<-hidcos$aic
-  }
-  minBXIIcos1<-min(minBXIIcos)
-  id_cos<-which(minBXIIcos==minBXIIcos1)
-  if(length(id_cos)>1){hidcos_final<-hidcos_l[[1]]}else{hidcos_final<-hidcos_l[[id_cos]]}
-  
-  ## Sin&Cos
-  for(l in 1:nrow(mat)){
-    print(c(l,"BXIIsincos"))
-    pq<-mat[l,]  
-    hidsincos<-try(BXIIGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],X=X,X_hat=X_hat,h1=1),silent=T)
-    if(class(hidsincos)=="try-error" || Box.test(hidsincos$residuals, lag = 20, type = "Ljung")$p.value<0.05 || sum(sum(hidsincos$model[-1,4]<0.11,na.rm = FALSE)< length(hidsincos$model[-1,4])) > 0 || hidsincos$conv != 0 || sum(is.nan(hidsincos$model[,4]))>0 || sum(is.infinite(hidsincos$residuals))>0){hidsincos$aic<-.Machine$double.xmax}
-    hidsincos_l[[l]]<-hidsincos
-    minBXIIsincos[l]<-hidsincos$aic
-  }
-  minBXIIsincos1<-min(minBXIIsincos)
-  id_sincos<-which(minBXIIsincos==minBXIIsincos1)
-  if(length(id_sincos)>1){hidsincos_final<-hidsincos_l[[1]]}else{hidsincos_final<-hidsincos_l[[id_sincos]]}
-  
-  ## sem cov
-  # for(l in 1:nrow(mat)){
-  #   print(c(l,"BXII"))
-  #   pq<-mat[l,]  
-  #   hid<-try(BXIIGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],h1=1),silent=T)
-  #   if(class(hid)=="try-error" || Box.test(hid$residuals, lag = 20, type = "Ljung")$p.value<0.05 || sum(sum(hid$model[-1,4]<0.11,na.rm = FALSE)< length(hid$model[-1,4])) > 0 || hid$conv != 0 || sum(is.nan(hid$model[,4]))>0 || sum(is.infinite(hid$residuals))>0){hid$aic<-.Machine$double.xmax}
-  #   hid_l[[l]]<-hid
-  #   minBXIIs[l]<-hid$aic
-  # }
-  # minBXIIs1<-min(minBXIIs)
-  # id_s<-which(minBXIIs==minBXIIs1)
-  # if(length(id_s)>1){hid_final<-hid_l[[1]]}else{hid_final<-hid_l[[id_s]]}
-  
-  hid_final<-c()
-  hid_final$aic<-.Machine$double.xmax
-  
-  minBXII<-min(hidsin_final$aic,hidcos_final$aic,hidsincos_final$aic,hid_final$aic)
-  if(minBXII==hidsin_final$aic){final1<-hidsin_final;modelo1<-"BXII with sin covariate"} else{
-    if(minBXII==hidcos_final$aic){final1<-hidcos_final; modelo1<-"BXII with cos covariate"} else{
-      if(minBXII==hidsincos_final$aic){final1<-hidsincos_final; modelo1<-"BXII with sin and cos covariate"} else{
-        if(minBXII==hid_final$aic){final1<-hid_final; modelo1<-"BXII without covariate"} 
-      }}}
-  
-  #############################
-  ###  fitting Ray-GAS   ######
-  #############################
-  
-  hidRaysin_l<-hidRaycos_l<-hidRaysincos_l<-hidRay_l<-list()
-  minRaysin<-minRaycos<-minRaysincos<-minRays<-c()
-  
-  ## Sin
-  for(l in 1:nrow(mat)){
-    print(c(l,"Raysin"))
-    pq<-mat[l,]
-    hidsin<-try(RayGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],X=Xsin,X_hat=Xsin_hat,h1=1),silent=T)
-    if(class(hidsin)=="try-error" #|| Box.test(hidsin$residuals, lag = 20, type = "Ljung")$p.value<0.05 
-       || sum(sum(hidsin$model[-1,4]<0.11,na.rm = FALSE)< length(hidsin$model[-1,4])) > 0 || hidsin$conv != 0 || sum(is.nan(hidsin$model[,4]))>0 || sum(is.infinite(hidsin$residuals))>0){hidsin$aic<-.Machine$double.xmax}
-    hidRaysin_l[[l]]<-hidsin
-    minRaysin[l]<-hidsin$aic
-  }
-  minRaysin1<-min(minRaysin)
-  id_sin<-which(minRaysin==minRaysin1)
-  if(length(id_sin)>1){hidRaysin_final<-hidRaysin_l[[1]]}else{hidRaysin_final<-hidRaysin_l[[id_sin]]}
-  
-  ## Cos
-  for(l in 1:nrow(mat)){
-    print(c(l,"Raycos"))
-    pq<-mat[l,]  
-    hidcos<-try(RayGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],X=Xcos,X_hat=Xcos_hat,h1=1),silent=T)
-    if(class(hidcos)=="try-error" #|| Box.test(hidcos$residuals, lag = 20, type = "Ljung")$p.value<0.05 
-       || sum(sum(hidcos$model[-1,4]<0.11,na.rm = FALSE)< length(hidcos$model[-1,4])) > 0 || hidcos$conv != 0 || sum(is.nan(hidcos$model[,4]))>0 || sum(is.infinite(hidcos$residuals))>0){hidcos$aic<-.Machine$double.xmax}
-    hidRaycos_l[[l]]<-hidcos
-    minRaycos[l]<-hidcos$aic
-  }
-  minRaycos1<-min(minRaycos)
-  id_cos<-which(minRaycos==minRaycos1)
-  if(length(id_cos)>1){hidRaycos_final<-hidRaycos_l[[1]]}else{hidRaycos_final<-hidRaycos_l[[id_cos]]}
-  
-  ## Sin&Cos
-  for(l in 1:nrow(mat)){
-    print(c(l,"Raysincos"))
-    pq<-mat[l,]  
-    hidsincos<-try(RayGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],X=X,X_hat=X_hat,h1=1),silent=T)
-    if(class(hidsincos)=="try-error" #|| Box.test(hidsincos$residuals, lag = 20, type = "Ljung")$p.value<0.05 
-       || sum(sum(hidsincos$model[-1,4]<0.11,na.rm = FALSE)< length(hidsincos$model[-1,4])) > 0 || hidsincos$conv != 0 || sum(is.nan(hidsincos$model[,4]))>0 || sum(is.infinite(hidsincos$residuals))>0){hidsincos$aic<-.Machine$double.xmax}
-    hidRaysincos_l[[l]]<-hidsincos
-    minRaysincos[l]<-hidsincos$aic
-  }
-  minRaysincos1<-min(minRaysincos)
-  id_sincos<-which(minRaysincos==minRaysincos1)
-  if(length(id_sincos)>1){hidRaysincos_final<-hidRaysincos_l[[1]]}else{hidRaysincos_final<-hidRaysincos_l[[id_sincos]]}
-  
-  # ## sem cov
-  # for(l in 1:nrow(mat)){
-  #   print(c(l,"Ray"))
-  #   pq<-mat[l,]  
-  #   hid<-try(RayGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],h1=1),silent=T)
-  #   if(class(hid)=="try-error" || Box.test(hid$residuals, lag = 20, type = "Ljung")$p.value<0.05 || sum(sum(hid$model[-1,4]<0.11,na.rm = FALSE)< length(hid$model[-1,4])) > 0 || hid$conv != 0 || sum(is.nan(hid$model[,4]))>0 || sum(is.infinite(hid$residuals))>0){hid$aic<-.Machine$double.xmax}
-  #   hidRay_l[[l]]<-hid
-  #   minRays[l]<-hid$aic
-  # }
-  # minRays1<-min(minRays)
-  # id_s<-which(minRays==minRays1)
-  # if(length(id_s)>1){hidRay_final<-hidRay_l[[1]]}else{hidRay_final<-hidRay_l[[id_s]]}
-  
-  hidRay_final<-c()
-  hidRay_final$aic<-.Machine$double.xmax
-  
-  minRay<-min(hidRaysin_final$aic,hidRaycos_final$aic,hidRaysincos_final$aic,hidRay_final$aic)
-  if(minRay==hidRaysin_final$aic){final_Ray1<-hidRaysin_final; modelo_Ray1<-"Ray with sin covariate"} else{
-    if(minRay==hidRaycos_final$aic){final_Ray1<-hidRaycos_final;modelo_Ray1<-"Ray with cos covariate"} else{
-      if(minRay==hidRaysincos_final$aic){final_Ray1<-hidRaysincos_final; modelo_Ray1<-"Ray with sin and cos covariate"} else{
-        if(minRay==hidRay_final$aic){final_Ray1<-hidRay_final; modelo_Ray1<-"Ray without covariate"} 
-      }}}
-  
-  #############################
-  ###  fitting gamma-GAS   ####
-  #############################
-  
-  hidgammasin_l<-hidgammacos_l<-hidgammasincos_l<-hidgamma_l<-list()
-  mingammasin<-mingammacos<-mingammasincos<-mingammas<-c()
-  mingammasin2<-mingammacos2<-mingammasincos2<-mingammas2<-c()
-  
-  
-  ## Sin
-  for(l in 1:nrow(gamma_orders)
-  ){
-    print(c(l,"gammasin"))
-    pq<-gamma_orders[l,]  
-    hidsin<-try(gas(as.numeric(y),
-                  x=Xsin,
-                  p=as.integer(pq[1]),
-                  q=as.integer(pq[2]),
-                  distr = "gamma",
-                  param = "scale",
-                  par_static = c(FALSE, TRUE),
-                  scaling = "fisher_inv"),silent=T)
     
-    if(class(hidsin)=="try-error" || hidsin$control$optim_arguments$opts$xtol_rel != 0 || sum(sum(hidsin$fit$coef_pval[1:(length(hidsin$fit$coef_pval))]<0.05)==(length(hidsin$fit$coef_pval)))==0 || sum(is.infinite(hidsin$fit$resid_tv))>0){hidsin$fit$aic<-.Machine$double.xmax}
-    hidgammasin_l[[l]]<-hidsin$fit
-    mingammasin[l]<-hidsin$fit$aic
+    pq<-mat[l,]
+    
+    ## Sin
+    print(c(l,"BXIIsin",1))
+    hidsin<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=Xsin,X_hat=Xsin_hat,h1=1),silent=T)
+    hidsin_l[[l]]<-hidsin
+    
+    ## Cos
+    print(c(l,"BXIIcos",2))
+    hidcos<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=Xcos,X_hat=Xcos_hat,h1=1),silent=T)
+    hidcos_l[[l]]<-hidcos
+    
+    ## Sin&Cos
+    print(c(l,"BXIIsincos",3))
+    hidsincos<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=X,X_hat=X_hat,h1=1),silent=T)
+    hidsincos_l[[l]]<-hidsincos
+    
+    ## Calculate model statistics
+    for(tipo in c("sin","cos","sincos")){
+      
+      if(tipo=="sin"){
+        fit<-hidsin
+      }else if(tipo=="cos"){
+        fit<-hidcos
+      }else{
+        fit<-hidsincos
+      }
+      
+      if(inherits(fit,"try-error")){
+        aic<-.Machine$double.xmax
+        pv<-NA
+        int_sig<-0
+        model_sig<-0
+        RMSE<-MAE<-MAPE<-NA
+      }else{
+        aic<-round(fit$aic,4)
+        pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
+        int_sig<-as.numeric(fit$model[1,4]<0.05)
+        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<0.05))
+        RMSE<-accuracy(y,fit$fitted)[,2]
+        MAE<-accuracy(y,fit$fitted)[,3]
+        MAPE<-accuracy(y,fit$fitted)[,5]
+      }
+      
+      if(tipo=="sin"){
+        aic_BXII_sin[l]<-aic
+        pv_LB_BXIIsin[l]<-pv
+        int_sig_BXIIsin[l]<-int_sig
+        model_sig_BXIIsin[l]<-model_sig
+        RMSE_BXIIsin[l]<-RMSE
+        MAE_BXIIsin[l]<-MAE
+        MAPE_BXIIsin[l]<-MAPE
+      }else if(tipo=="cos"){
+        aic_BXII_cos[l]<-aic
+        pv_LB_BXIIcos[l]<-pv
+        int_sig_BXIIcos[l]<-int_sig
+        model_sig_BXIIcos[l]<-model_sig
+        RMSE_BXIIcos[l]<-RMSE
+        MAE_BXIIcos[l]<-MAE
+        MAPE_BXIIcos[l]<-MAPE
+      }else{
+        aic_BXII_sincos[l]<-aic
+        pv_LB_BXIIsincos[l]<-pv
+        int_sig_BXIIsincos[l]<-int_sig
+        model_sig_BXIIsincos[l]<-model_sig
+        RMSE_BXIIsincos[l]<-RMSE
+        MAE_BXIIsincos[l]<-MAE
+        MAPE_BXIIsincos[l]<-MAPE
+      }
+    }
   }
-  mingammasin1<-min(mingammasin)
-  id_sin<-which(mingammasin==mingammasin1)
-  if(length(id_sin)>1){
-    hidgammasin_final<-hidgammasin_l[[1]]
-  }else{hidgammasin_final<-hidgammasin_l[[id_sin]]}
+  
+  ## Results table
+  Top_BXIIsin<-data.frame(
+    Index=1:nrow(mat),AIC=aic_BXII_sin,pvalue_LB=pv_LB_BXIIsin,
+    int_sig=int_sig_BXIIsin,model_sig=model_sig_BXIIsin,
+    RMSE=RMSE_BXIIsin,MAPE=MAPE_BXIIsin,MAE=MAE_BXIIsin,
+    model=model_BXIIsin
+  )
+  
+  Top_BXIIcos<-data.frame(
+    Index=1:nrow(mat),AIC=aic_BXII_cos,pvalue_LB=pv_LB_BXIIcos,
+    int_sig=int_sig_BXIIcos,model_sig=model_sig_BXIIcos,
+    RMSE=RMSE_BXIIcos,MAPE=MAPE_BXIIcos,MAE=MAE_BXIIcos,
+    model=model_BXIIcos
+  )
+  
+  Top_BXIIsincos<-data.frame(
+    Index=1:nrow(mat),AIC=aic_BXII_sincos,pvalue_LB=pv_LB_BXIIsincos,
+    int_sig=int_sig_BXIIsincos,model_sig=model_sig_BXIIsincos,
+    RMSE=RMSE_BXIIsincos,MAPE=MAPE_BXIIsincos,MAE=MAE_BXIIsincos,
+    model=model_BXIIsincos
+  )
+  
+  Top_BXII<-rbind(
+    data.frame(Type="Sin",Top_BXIIsin),
+    data.frame(Type="Cos",Top_BXIIcos),
+    data.frame(Type="SinCos",Top_BXIIsincos)
+  )
+  
+  rownames(Top_BXII)<-NULL
+  Top_BXII<-Top_BXII[order(Top_BXII$AIC),]
+  
+  ## Select the best model
+  if(sum(na.omit(Top_BXII$model_sig==1))==0){
+    Select_BXII<-Top_BXII %>%
+      filter(pvalue_LB>0.05) %>%
+      filter(RMSE==min(RMSE))
+  }else{
+    Select_BXII<-Top_BXII %>%
+      filter(pvalue_LB>0.05,model_sig==1) %>%
+      filter(RMSE==min(RMSE))
+  }
   
   
-  ## Cos
-  for(l in 1:nrow(gamma_orders)
-  ){
-    print(c(l,"gammacos"))
-    pq<-gamma_orders[l,]  
-    hidcos<-try(gas(as.numeric(y),
+  if(nrow(Select_BXII)>0){
+    if(Select_BXII$Type[1]=="Sin"){
+      final1<-hidsin_l[[Select_BXII$Index[1]]]
+      modelo1<-"BXII Sin"
+    }else if(Select_BXII$Type[1]=="Cos"){
+      final1<-hidcos_l[[Select_BXII$Index[1]]]
+      modelo1<-"BXII Cos"
+    }else{
+      final1<-hidsincos_l[[Select_BXII$Index[1]]]
+      modelo1<-"BXII SinCos"
+    }
+  }
+  
+  ##########################
+  #### fitting Ray-GAS ####
+  ##########################
+  
+  hidRaysin_l<-hidRaycos_l<-hidRaysincos_l<-list()
+  
+  aic_Ray_sin<-pv_LB_Raysin<-int_sig_Raysin<-model_sig_Raysin<-RMSE_Raysin<-MAPE_Raysin<-MAE_Raysin<-c()
+  aic_Ray_cos<-pv_LB_Raycos<-int_sig_Raycos<-model_sig_Raycos<-RMSE_Raycos<-MAPE_Raycos<-MAE_Raycos<-c()
+  aic_Ray_sincos<-pv_LB_Raysincos<-int_sig_Raysincos<-model_sig_Raysincos<-RMSE_Raysincos<-MAPE_Raysincos<-MAE_Raysincos<-c()
+  
+  for(l in 1:nrow(mat)){
+    
+    pq<-mat[l,]
+    
+    ## Sin
+    print(c(l,"Raysin",1))
+    hidsin<-try(RayGAS.fit(y,1:pq[1],1:pq[2],X=Xsin,X_hat=Xsin_hat,h1=1),silent=T)
+    hidRaysin_l[[l]]<-hidsin
+    
+    ## Cos
+    print(c(l,"Raycos",2))
+    hidcos<-try(RayGAS.fit(y,1:pq[1],1:pq[2],X=Xcos,X_hat=Xcos_hat,h1=1),silent=T)
+    hidRaycos_l[[l]]<-hidcos
+    
+    ## Sin&Cos
+    print(c(l,"Raysincos",3))
+    hidsincos<-try(RayGAS.fit(y,1:pq[1],1:pq[2],X=X,X_hat=X_hat,h1=1),silent=T)
+    hidRaysincos_l[[l]]<-hidsincos
+    
+    ## Calculate model statistics
+    for(tipo in c("sin","cos","sincos")){
+      
+      if(tipo=="sin"){
+        fit<-hidsin
+      }else if(tipo=="cos"){
+        fit<-hidcos
+      }else{
+        fit<-hidsincos
+      }
+      
+      if(inherits(fit,"try-error")){
+        aic<-.Machine$double.xmax
+        pv<-NA
+        int_sig<-0
+        model_sig<-0
+        RMSE<-MAE<-MAPE<-NA
+      }else{
+        aic<-round(fit$aic,4)
+        pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
+        int_sig<-as.numeric(fit$model[1,4]<0.05)
+        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<0.05))
+        RMSE<-accuracy(y,fit$fitted)[,2]
+        MAE<-accuracy(y,fit$fitted)[,3]
+        MAPE<-accuracy(y,fit$fitted)[,5]
+      }
+      
+      if(tipo=="sin"){
+        aic_Ray_sin[l]<-aic
+        pv_LB_Raysin[l]<-pv
+        int_sig_Raysin[l]<-int_sig
+        model_sig_Raysin[l]<-model_sig
+        RMSE_Raysin[l]<-RMSE
+        MAE_Raysin[l]<-MAE
+        MAPE_Raysin[l]<-MAPE
+      }else if(tipo=="cos"){
+        aic_Ray_cos[l]<-aic
+        pv_LB_Raycos[l]<-pv
+        int_sig_Raycos[l]<-int_sig
+        model_sig_Raycos[l]<-model_sig
+        RMSE_Raycos[l]<-RMSE
+        MAE_Raycos[l]<-MAE
+        MAPE_Raycos[l]<-MAPE
+      }else{
+        aic_Ray_sincos[l]<-aic
+        pv_LB_Raysincos[l]<-pv
+        int_sig_Raysincos[l]<-int_sig
+        model_sig_Raysincos[l]<-model_sig
+        RMSE_Raysincos[l]<-RMSE
+        MAE_Raysincos[l]<-MAE
+        MAPE_Raysincos[l]<-MAPE
+      }
+    }
+  }
+  
+  ## Results table
+  Top_Raysin<-data.frame(
+    Index=1:nrow(mat),AIC=aic_Ray_sin,pvalue_LB=pv_LB_Raysin,
+    int_sig=int_sig_Raysin,model_sig=model_sig_Raysin,
+    RMSE=RMSE_Raysin,MAPE=MAPE_Raysin,MAE=MAE_Raysin
+  )
+  
+  Top_Raycos<-data.frame(
+    Index=1:nrow(mat),AIC=aic_Ray_cos,pvalue_LB=pv_LB_Raycos,
+    int_sig=int_sig_Raycos,model_sig=model_sig_Raycos,
+    RMSE=RMSE_Raycos,MAPE=MAPE_Raycos,MAE=MAE_Raycos
+  )
+  
+  Top_Raysincos<-data.frame(
+    Index=1:nrow(mat),AIC=aic_Ray_sincos,pvalue_LB=pv_LB_Raysincos,
+    int_sig=int_sig_Raysincos,model_sig=model_sig_Raysincos,
+    RMSE=RMSE_Raysincos,MAPE=MAPE_Raysincos,MAE=MAE_Raysincos
+  )
+  
+  Top_Ray<-rbind(
+    data.frame(Type="Sin",Top_Raysin),
+    data.frame(Type="Cos",Top_Raycos),
+    data.frame(Type="SinCos",Top_Raysincos)
+  )
+  
+  rownames(Top_Ray)<-NULL
+  Top_Ray<-Top_Ray[order(Top_Ray$AIC),]
+  
+  ## Select the best model
+  if(sum(na.omit(Top_Ray$model_sig==1))==0){
+    Select_Ray<-Top_Ray %>%
+      filter(pvalue_LB>0.05) %>%
+      filter(RMSE==min(RMSE))
+  }else{
+    Select_Ray<-Top_Ray %>%
+      filter(pvalue_LB>0.05,model_sig==1) %>%
+      filter(RMSE==min(RMSE))
+  }
+  
+  if(nrow(Select_Ray)>0){
+    if(Select_Ray$Type[1]=="Sin"){
+      final_Ray1<-hidRaysin_l[[Select_Ray$Index[1]]]
+      modelo_Ray1<-"Ray Sin"
+    }else if(Select_Ray$Type[1]=="Cos"){
+      final_Ray1<-hidRaycos_l[[Select_Ray$Index[1]]]
+      modelo_Ray1<-"Ray Cos"
+    }else{
+      final_Ray1<-hidRaysincos_l[[Select_Ray$Index[1]]]
+      modelo_Ray1<-"Ray SinCos"
+    }
+  }
+  
+  ###########################
+  #### fitting gamma-GAS ####
+  ###########################
+  
+  hidgammasin_l<-hidgammacos_l<-hidgammasincos_l<-list()
+  
+  aic_gamma_sin<-pv_LB_gammasin<-int_sig_gammasin<-model_sig_gammasin<-RMSE_gammasin<-MAPE_gammasin<-MAE_gammasin<-c()
+  aic_gamma_cos<-pv_LB_gammacos<-int_sig_gammacos<-model_sig_gammacos<-RMSE_gammacos<-MAPE_gammacos<-MAE_gammacos<-c()
+  aic_gamma_sincos<-pv_LB_gammasincos<-int_sig_gammasincos<-model_sig_gammasincos<-RMSE_gammasincos<-MAPE_gammasincos<-MAE_gammasincos<-c()
+  
+  for(l in 1:nrow(mat)){
+    
+    pq<-mat[l,]
+    
+    ## Sin
+    print(c(l,"gammasin",1))
+    hidsin<-try(gas(as.numeric(y),
                     x=Xsin,
                     p=as.integer(pq[1]),
                     q=as.integer(pq[2]),
+                    optim_arguments = list(
+                      opts = list(
+                        algorithm = "NLOPT_LN_NELDERMEAD",
+                        maxeval = 2000,
+                        xtol_rel = 1e-4
+                      )
+                    ),
                     distr = "gamma",
                     param = "scale",
                     par_static = c(FALSE, TRUE),
                     scaling = "fisher_inv"),silent=T)
-    if(class(hidcos)=="try-error" || hidsin$control$optim_arguments$opts$xtol_rel != 0 || sum(is.nan(hidcos$model[,4]))>0 || sum(is.infinite(hidcos$residuals))>0|| hidcos$conv != 0 || sum(is.nan(hidcos$model[,4]))>0 || sum(is.infinite(hidcos$residuals))>0){hidcos$aic<-.Machine$double.xmax}
-    hidgammacos_l[[l]]<-hidcos
-    mingammacos[l]<-hidcos$aic
-  }
-  mingammacos1<-min(mingammacos)
-  id_cos<-which(mingammacos==mingammacos1)
-  if(length(id_cos)>1){
-    hidgammacos_final<-hidgammacos_l[[1]]
-  }else{hidgammacos_final<-hidgammacos_l[[id_cos]]}  
-  
-  ## Sin&Cos
-  for(l in 1:nrow(gamma_orders)
-  ){
-    print(c(l,"gammasincos"))
-    pq<-gamma_orders[l,]  
+    hidgammasin_l[[l]]<-hidsin$fit
+    
+    ## Cos
+    print(c(l,"gammacos",2))
+    hidcos<-try(gas(as.numeric(y),
+                    x=Xcos,
+                    p=as.integer(pq[1]),
+                    q=as.integer(pq[2]),
+                    optim_arguments = list(
+                      opts = list(
+                        algorithm = "NLOPT_LN_NELDERMEAD",
+                        maxeval = 2000,
+                        xtol_rel = 1e-4
+                      )
+                    ),
+                    distr = "gamma",
+                    param = "scale",
+                    par_static = c(FALSE, TRUE),
+                    scaling = "fisher_inv"),silent=T)
+    hidgammacos_l[[l]]<-hidcos$fit
+    
+    ## Sin&Cos
+    print(c(l,"gammasincos",3))
     hidsincos<-try(gas(as.numeric(y),
-                       x=Xsin,
+                       x=X,
                        p=as.integer(pq[1]),
                        q=as.integer(pq[2]),
+                       optim_arguments = list(
+                         opts = list(
+                           algorithm = "NLOPT_LN_NELDERMEAD",
+                           maxeval = 2000,
+                           xtol_rel = 1e-4
+                         )
+                       ),
                        distr = "gamma",
                        param = "scale",
                        par_static = c(FALSE, TRUE),
                        scaling = "fisher_inv"),silent=T)
-    if(class(hidsincos)=="try-error" || hidsincos$control$optim_arguments$opts$xtol_rel != 0 || sum(is.nan(hidsincos$model[,4]))>0 || sum(is.infinite(hidsincos$residuals))>0|| hidsincos$conv != 0 || sum(is.nan(hidsincos$model[,4]))>0 || sum(is.infinite(hidsincos$residuals))>0){hidsincos$aic<-.Machine$double.xmax}
-    hidgammasincos_l[[l]]<-hidsincos
-    mingammasincos[l]<-hidsincos$aic
+    hidgammasincos_l[[l]]<-hidsincos$fit
+    
+    ## Calculate model statistics
+    for(tipo in c("sin","cos","sincos")){
+      
+      if(tipo=="sin"){
+        fit<-hidsin$fit
+      }else if(tipo=="cos"){
+        fit<-hidcos$fit
+      }else{
+        fit<-hidsincos$fit
+      }
+      
+      if(inherits(fit,"try-error")){
+        aic<-.Machine$double.xmax
+        pv<-NA
+        int_sig<-0
+        model_sig<-0
+        RMSE<-MAE<-MAPE<-NA
+      }else{
+        aic<-round(fit$aic,4)
+        pv<-round(Box.test(fit$resid_tv,lag=20,type="Ljung")$p.value,4)
+        int_sig<-as.numeric(fit$coef_pval[1]<0.05)
+        model_sig<-as.numeric(all(fit$coef_pval[2:length(fit$coef_pval)]<0.05))
+        RMSE<-accuracy(y,fit$mean_tv)[,2]
+        MAE<-accuracy(y,fit$mean_tv)[,3]
+        MAPE<-accuracy(y,fit$mean_tv)[,5]
+      }
+      
+      if(tipo=="sin"){
+        aic_gamma_sin[l]<-aic
+        pv_LB_gammasin[l]<-pv
+        int_sig_gammasin[l]<-int_sig
+        model_sig_gammasin[l]<-model_sig
+        RMSE_gammasin[l]<-RMSE
+        MAE_gammasin[l]<-MAE
+        MAPE_gammasin[l]<-MAPE
+      }else if(tipo=="cos"){
+        aic_gamma_cos[l]<-aic
+        pv_LB_gammacos[l]<-pv
+        int_sig_gammacos[l]<-int_sig
+        model_sig_gammacos[l]<-model_sig
+        RMSE_gammacos[l]<-RMSE
+        MAE_gammacos[l]<-MAE
+        MAPE_gammacos[l]<-MAPE
+      }else{
+        aic_gamma_sincos[l]<-aic
+        pv_LB_gammasincos[l]<-pv
+        int_sig_gammasincos[l]<-int_sig
+        model_sig_gammasincos[l]<-model_sig
+        RMSE_gammasincos[l]<-RMSE
+        MAE_gammasincos[l]<-MAE
+        MAPE_gammasincos[l]<-MAPE
+      }
+    }
   }
-  mingammasincos1<-min(mingammasincos)
-  id_sincos<-which(mingammasincos==mingammasincos1)
-  if(length(id_sincos)>1){
-    hidgammasincos_final<-hidgammasincos_l[[1]]
-  }else{hidgammasincos_final<-hidgammasincos_l[[id_sincos]]}  
   
-  # ## sem cov
-  # for(l in 1:nrow(mat)){
-  #   print(c(l,"gamma"))
-  #   pq<-mat[l,]  
-  #   hid<-try(GGAS.fit(y,pq[1]:pq[2],pq[3]:pq[4],h1=1),silent=T)
-  #   if(class(hid)=="try-error" #|| Box.test(hid$residuals, lag = 20, type = "Ljung")$p.value<0.05 
-  # || sum(sum(hid$model[-1,4]<0.11,na.rm = FALSE)< length(hid$model[-1,4])) > 0 || hid$conv != 0 || sum(is.nan(hid$model[,4]))>0 || sum(is.infinite(hid$residuals))>0){hid$aic<-.Machine$double.xmax}
-  #   hidgamma_l[[l]]<-hid
-  #   mingammas[l]<-hid$aic
-  # }
-  # mingammas1<-min(mingammas)
-  # id_s<-which(mingammas==mingammas1)
-  # if(length(id_s)>1){hidgamma_final<-hidgamma_l[[1]]}else{hidgamma_final<-hidgamma_l[[id_s]]}
+  ## Results table
+  Top_gammasin<-data.frame(
+    Index=1:nrow(mat),AIC=aic_gamma_sin,pvalue_LB=pv_LB_gammasin,
+    int_sig=int_sig_gammasin,model_sig=model_sig_gammasin,
+    RMSE=RMSE_gammasin,MAPE=MAPE_gammasin,MAE=MAE_gammasin
+  )
   
-  hidgamma_final<-c()
-  hidgamma_final$aic<-.Machine$double.xmax
+  Top_gammacos<-data.frame(
+    Index=1:nrow(mat),AIC=aic_gamma_cos,pvalue_LB=pv_LB_gammacos,
+    int_sig=int_sig_gammacos,model_sig=model_sig_gammacos,
+    RMSE=RMSE_gammacos,MAPE=MAPE_gammacos,MAE=MAE_gammacos
+  )
   
-  mingamma<-min(hidgammasin_final$aic,hidgammacos_final$aic,hidgammasincos_final$aic,hidgamma_final$aic)
-  if(mingamma==hidgammasin_final$aic){final_GAMMA1<-hidgammasin_final; modelo_GAMMA1<-"gamma with sin covariate"} else{
-    if(mingamma==hidgammacos_final$aic){final_GAMMA1<-hidgammacos_final;modelo_GAMMA1<-"gamma with cos covariate"} else{
-      if(mingamma==hidgammasincos_final$aic){final_GAMMA1<-hidgammasincos_final; modelo_GAMMA1<-"gamma with sin and cos covariate"} else{
-        if(mingamma==hidgamma_final$aic){final_GAMMA1<-hidgamma_final; modelo_GAMMA1<-"gamma without covariate"} 
-      }}}
+  Top_gammasincos<-data.frame(
+    Index=1:nrow(mat),AIC=aic_gamma_sincos,pvalue_LB=pv_LB_gammasincos,
+    int_sig=int_sig_gammasincos,model_sig=model_sig_gammasincos,
+    RMSE=RMSE_gammasincos,MAPE=MAPE_gammasincos,MAE=MAE_gammasincos
+  )
   
-  ##########################
-  ### fitting BXII-ARMA ####
-  ##########################
+  Top_gamma<-rbind(
+    data.frame(Type="Sin",Top_gammasin),
+    data.frame(Type="Cos",Top_gammacos),
+    data.frame(Type="SinCos",Top_gammasincos)
+  )
   
-  hidBXIIARMAsin_l<-hidBXIIARMAcos_l<-hidBXIIARMAsincos_l<-hidBXIIARMA_l<-list()
-  minBXIIARMAsin<-minBXIIARMAcos<-minBXIIARMAsincos<-minBXIIARMAs<-c()
-  matBXII<-matrix(c(1,1,1,1,1,1,2,2,1,1,1,2,2,2,1,1,2,2,2,2,2,2,1,2,1,2,1,1,1,2,2,2,
-                    1,2,1,2,1,1,3,3,1,1,1,3,2,2,3,3,2,2,1,3,1,2,3,3,1,2,1,3,3,3,1,1,
-                    3,3,2,2,3,3,1,2,1,3,1,1,1,3,2,2,1,3,1,2,1,3,3,3,3,3,3,3,3,3,1,3
-  ),ncol=4,byrow=T)
+  rownames(Top_gamma)<-NULL
+  Top_gamma<-Top_gamma[order(Top_gamma$AIC),]
   
-  ## Sin
-  for(l in 1:nrow(matBXII)){
-    print(c(l,"BXIIARMAsin"))
-    pqbxii<-matBXII[l,]
-    hidsin<-try(bxiiarmaCOV.fit(y,ar=pqbxii[1]:pqbxii[2],ma=pqbxii[3]:pqbxii[4],X = as.matrix(Xsin),X_hat=as.matrix(Xsin_hat),h=1,diag=0,tau=0.5),silent=T)
-    if(class(hidsin)=="try-error" || sum(sum(hidsin$model[-1,4]<0.11,na.rm = FALSE)< length(hidsin$model[-1,4])) > 0 || hidsin$conv != 0 || sum(is.nan(hidsin$model[,4]))>0 || sum(is.infinite(hidsin$residuals))>0){hidsin$aic<-.Machine$double.xmax}
+  ## Select the best model
+  
+  if(sum(na.omit(Top_gamma$model_sig==1))==0){
+    Select_gamma<-Top_gamma %>%
+      filter(pvalue_LB>0.05) %>%
+      filter(RMSE==min(RMSE))
+  }else{
+    Select_gamma<-Top_gamma %>%
+      filter(pvalue_LB>0.05,model_sig==1) %>%
+      filter(RMSE==min(RMSE))
+  }
+  
+  
+  if(nrow(Select_gamma)>0){
+    if(Select_gamma$Type[1]=="Sin"){
+      final_gamma1<-hidgammasin_l[[Select_gamma$Index[1]]]
+      modelo_gamma1<-"gamma Sin"
+    }else if(Select_gamma$Type[1]=="Cos"){
+      final_gamma1<-hidgammacos_l[[Select_gamma$Index[1]]]
+      modelo_gamma1<-"gamma Cos"
+    }else{
+      final_gamma1<-hidgammasincos_l[[Select_gamma$Index[1]]]
+      modelo_gamma1<-"gamma SinCos"
+    }
+  }
+  
+  ###########################
+  #### fitting BXII-ARMA ####
+  ###########################
+  
+  hidBXIIARMAsin_l<-hidBXIIARMAcos_l<-hidBXIIARMAsincos_l<-list()
+  
+  aic_BXIIARMA_sin<-pv_LB_BXIIARMAsin<-int_sig_BXIIARMAsin<-model_sig_BXIIARMAsin<-RMSE_BXIIARMAsin<-MAPE_BXIIARMAsin<-MAE_BXIIARMAsin<-c()
+  aic_BXIIARMA_cos<-pv_LB_BXIIARMAcos<-int_sig_BXIIARMAcos<-model_sig_BXIIARMAcos<-RMSE_BXIIARMAcos<-MAPE_BXIIARMAcos<-MAE_BXIIARMAcos<-c()
+  aic_BXIIARMA_sincos<-pv_LB_BXIIARMAsincos<-int_sig_BXIIARMAsincos<-model_sig_BXIIARMAsincos<-RMSE_BXIIARMAsincos<-MAPE_BXIIARMAsincos<-MAE_BXIIARMAsincos<-c()
+  
+  for(l in 1:nrow(mat)){
+    
+    pq<-mat[l,]
+    
+    ## Sin
+    print(c(l,"BXIIARMAsin",1))
+    hidsin<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(Xsin),X_hat=as.matrix(Xsin_hat),h=1,diag=0,tau=0.5),silent=T)
     hidBXIIARMAsin_l[[l]]<-hidsin
-    minBXIIARMAsin[l]<-hidsin$aic
-  }
-
-  minBXIIARMAsin1<-min(minBXIIARMAsin)
-  id_sin<-which(minBXIIARMAsin==minBXIIARMAsin1)
-  if(length(id_sin)>1){hidBXIIARMAsin_final<-hidBXIIARMAsin_l[[1]]}else{hidBXIIARMAsin_final<-hidBXIIARMAsin_l[[id_sin]]}
-  
-  #hidBXIIARMAsin_final<-c()
-  #hidBXIIARMAsin_final$aic<-.Machine$double.xmax
-  
-  ## Cos
-  for(l in 1:nrow(matBXII)){
-    pqbxii<-matBXII[l,]
-    print(c(l,"BXIIARMAcos"))
-    hidcos<-try(bxiiarmaCOV.fit(y,ar=pqbxii[1]:pqbxii[2],ma=pqbxii[3]:pqbxii[4],X = as.matrix(Xcos),X_hat=as.matrix(Xcos_hat),h=1,diag=0,tau=0.5),silent=T)
-    if(class(hidcos)=="try-error" || sum(sum(hidcos$model[-1,4]<0.11,na.rm = FALSE)< length(hidcos$model[-1,4])) > 0 || hidcos$conv != 0 || sum(is.nan(hidcos$model[,4]))>0 || sum(is.infinite(hidcos$residuals))>0){hidcos$aic<-.Machine$double.xmax}
+    
+    ## Cos
+    print(c(l,"BXIIARMAcos",2))
+    hidcos<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(Xcos),X_hat=as.matrix(Xcos_hat),h=1,diag=0,tau=0.5),silent=T)
     hidBXIIARMAcos_l[[l]]<-hidcos
-    minBXIIARMAcos[l]<-hidcos$aic
-  }
-  minBXIIARMAcos1<-min(minBXIIARMAcos)
-  id_cos<-which(minBXIIARMAcos==minBXIIARMAcos1)
-  if(length(id_cos)>1){hidBXIIARMAcos_final<-hidBXIIARMAcos_l[[1]]}else{hidBXIIARMAcos_final<-hidBXIIARMAcos_l[[id_cos]]}
-  
-  #hidBXIIARMAcos_final<-c()
-  #hidBXIIARMAcos_final$aic<-.Machine$double.xmax
-  
-  ## Sin&Cos
-  for(l in 1:nrow(matBXII)){
-    print(c(l,"BXIIARMAsincos"))
-    pqbxii<-matBXII[l,]
-    hidsincos<-try(bxiiarmaCOV.fit(y,ar=pqbxii[1]:pqbxii[2],ma=pqbxii[3]:pqbxii[4],X = as.matrix(X),X_hat=as.matrix(X_hat),h=1,diag=0,tau=0.5),silent=T)
-    if(class(hidsincos)=="try-error" || sum(sum(hidsincos$model[-1,4]<0.11,na.rm = FALSE)< length(hidsincos$model[-1,4])) > 0 || hidsincos$conv != 0 || sum(is.nan(hidsincos$model[,4]))>0 || sum(is.infinite(hidsincos$residuals))>0){hidsincos$aic<-.Machine$double.xmax}
+    
+    ## Sin&Cos
+    print(c(l,"BXIIARMAsincos",3))
+    hidsincos<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(X),X_hat=as.matrix(X_hat),h=1,diag=0,tau=0.5),silent=T)
     hidBXIIARMAsincos_l[[l]]<-hidsincos
-    minBXIIARMAsincos[l]<-hidsincos$aic
+    
+    ## Calculate model statistics
+    for(tipo in c("sin","cos","sincos")){
+      
+      if(tipo=="sin"){
+        fit<-hidsin
+      }else if(tipo=="cos"){
+        fit<-hidcos
+      }else{
+        fit<-hidsincos
+      }
+      
+      if(inherits(fit,"try-error")){
+        aic<-.Machine$double.xmax
+        pv<-NA
+        int_sig<-0
+        model_sig<-0
+        RMSE<-MAE<-MAPE<-NA
+      }else{
+        aic<-round(fit$aic,4)
+        pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
+        int_sig<-as.numeric(fit$model[1,4]<0.05)
+        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<0.05))
+        RMSE<-accuracy(y,fit$fitted)[,2]
+        MAE<-accuracy(y,fit$fitted)[,3]
+        MAPE<-accuracy(y,fit$fitted)[,5]
+      }
+      
+      if(tipo=="sin"){
+        aic_BXIIARMA_sin[l]<-aic
+        pv_LB_BXIIARMAsin[l]<-pv
+        int_sig_BXIIARMAsin[l]<-int_sig
+        model_sig_BXIIARMAsin[l]<-model_sig
+        RMSE_BXIIARMAsin[l]<-RMSE
+        MAE_BXIIARMAsin[l]<-MAE
+        MAPE_BXIIARMAsin[l]<-MAPE
+      }else if(tipo=="cos"){
+        aic_BXIIARMA_cos[l]<-aic
+        pv_LB_BXIIARMAcos[l]<-pv
+        int_sig_BXIIARMAcos[l]<-int_sig
+        model_sig_BXIIARMAcos[l]<-model_sig
+        RMSE_BXIIARMAcos[l]<-RMSE
+        MAE_BXIIARMAcos[l]<-MAE
+        MAPE_BXIIARMAcos[l]<-MAPE
+      }else{
+        aic_BXIIARMA_sincos[l]<-aic
+        pv_LB_BXIIARMAsincos[l]<-pv
+        int_sig_BXIIARMAsincos[l]<-int_sig
+        model_sig_BXIIARMAsincos[l]<-model_sig
+        RMSE_BXIIARMAsincos[l]<-RMSE
+        MAE_BXIIARMAsincos[l]<-MAE
+        MAPE_BXIIARMAsincos[l]<-MAPE
+      }
+    }
   }
-  minBXIIARMAsincos1<-min(minBXIIARMAsincos)
-  id_sincos<-which(minBXIIARMAsincos==minBXIIARMAsincos1)
-  if(length(id_sincos)>1){hidBXIIARMAsincos_final<-hidBXIIARMAsincos_l[[1]]}else{hidBXIIARMAsincos_final<-hidBXIIARMAsincos_l[[id_sincos]]}
   
-  #hidBXIIARMAsincos_final<-c()
-  #hidBXIIARMAsincos_final$aic<-.Machine$double.xmax
+  ## Results table
+  Top_BXIIARMAsin<-data.frame(
+    Index=1:nrow(mat),AIC=aic_BXIIARMA_sin,pvalue_LB=pv_LB_BXIIARMAsin,
+    int_sig=int_sig_BXIIARMAsin,model_sig=model_sig_BXIIARMAsin,
+    RMSE=RMSE_BXIIARMAsin,MAPE=MAPE_BXIIARMAsin,MAE=MAE_BXIIARMAsin
+  )
   
-  # sem cov
-
-  # for(l in 1:nrow(matBXII)){
-  #  print(c(l,"BXIIARMA"))
-  #  pqbxii<-matBXII[l,]
-  #  hid<-try(bxiiarma.fit(y,ar=pqbxii[1]:pqbxii[2],ma=pqbxii[3]:pqbxii[4],h1=1,resid = 3,diag1=1),silent=T)
-  #  if(class(hid)=="try-error" || sum(sum(hid$model[-1,4]<0.11,na.rm = FALSE)< length(hid$model[-1,4])) > 0 || hid$conv != 0 || sum(is.nan(hid$model[,4]))>0 || sum(is.infinite(hid$resid1))>0){hid$aic<-.Machine$double.xmax}
-  #  hidBXIIARMA_l[[l]]<-hid
-  #  minBXIIARMAs[l]<-hid$aic
-  # }
-  # minBXIIARMAs1<-min(minBXIIARMAs)
-  # id_s<-which(minBXIIARMAs==minBXIIARMAs1)
-  # if(length(id_s)>1){hidBXIIARMA_final<-hidBXIIARMA_l[[1]]}else{hidBXIIARMA_final<-hidBXIIARMA_l[[id_s]]}
+  Top_BXIIARMAcos<-data.frame(
+    Index=1:nrow(mat),AIC=aic_BXIIARMA_cos,pvalue_LB=pv_LB_BXIIARMAcos,
+    int_sig=int_sig_BXIIARMAcos,model_sig=model_sig_BXIIARMAcos,
+    RMSE=RMSE_BXIIARMAcos,MAPE=MAPE_BXIIARMAcos,MAE=MAE_BXIIARMAcos
+  )
   
-  hidBXIIARMA_final<-c()
-  hidBXIIARMA_final$aic<-.Machine$double.xmax
+  Top_BXIIARMAsincos<-data.frame(
+    Index=1:nrow(mat),AIC=aic_BXIIARMA_sincos,pvalue_LB=pv_LB_BXIIARMAsincos,
+    int_sig=int_sig_BXIIARMAsincos,model_sig=model_sig_BXIIARMAsincos,
+    RMSE=RMSE_BXIIARMAsincos,MAPE=MAPE_BXIIARMAsincos,MAE=MAE_BXIIARMAsincos
+  )
   
-  minBXIIARMA<-min(hidBXIIARMAsin_final$aic,hidBXIIARMAcos_final$aic,hidBXIIARMAsincos_final$aic,hidBXIIARMA_final$aic)
-  if(minBXIIARMA==hidBXIIARMAsin_final$aic){finalBXIIARMA1<-hidBXIIARMAsin_final;modeloBXIIARMA1<-"BXIIARMA with sin covariate"} else{
-    if(minBXIIARMA==hidBXIIARMAcos_final$aic){finalBXIIARMA1<-hidBXIIARMAcos_final; modeloBXIIARMA1<-"BXIIARMA with cos covariate"} else{
-      if(minBXIIARMA==hidBXIIARMAsincos_final$aic){finalBXIIARMA1<-hidBXIIARMAsincos_final; modeloBXIIARMA1<-"BXIIARMA with sin and cos covariate"} else{
-        if(minBXIIARMA==hidBXIIARMA_final$aic){finalBXIIARMA1<-hidBXIIARMA_final; modeloBXIIARMA1<-"BXIIARMA without covariate"} 
-      }}}
+  Top_BXIIARMA<-rbind(
+    data.frame(Type="Sin",Top_BXIIARMAsin),
+    data.frame(Type="Cos",Top_BXIIARMAcos),
+    data.frame(Type="SinCos",Top_BXIIARMAsincos)
+  )
+  
+  rownames(Top_BXIIARMA)<-NULL
+  Top_BXIIARMA<-Top_BXIIARMA[order(Top_BXIIARMA$AIC),]
+  
+  ## Select the best model
+  
+  
+  if(sum(na.omit(Top_BXIIARMA$model_sig==1))==0){
+    Select_BXIIARMA<-Top_BXIIARMA %>%
+      filter(pvalue_LB>0.05) %>%
+      filter(RMSE==min(RMSE))
+    }else{
+      Select_BXIIARMA<-Top_BXIIARMA %>%
+      filter(pvalue_LB>0.05,model_sig==1) %>%
+      filter(RMSE==min(RMSE))
+      }
+  
+  if(nrow(Select_BXIIARMA)>0){
+    if(Select_BXIIARMA$Type[1]=="Sin"){
+      final_BXIIARMA1<-hidBXIIARMAsin_l[[Select_BXIIARMA$Index[1]]]
+      modelo_BXIIARMA1<-"BXIIARMA Sin"
+    }else if(Select_BXIIARMA$Type[1]=="Cos"){
+      final_BXIIARMA1<-hidBXIIARMAcos_l[[Select_BXIIARMA$Index[1]]]
+      modelo_BXIIARMA1<-"BXIIARMA Cos"
+    }else{
+      final_BXIIARMA1<-hidBXIIARMAsincos_l[[Select_BXIIARMA$Index[1]]]
+      modelo_BXIIARMA1<-"BXIIARMA SinCos"
+    }
+  }
   
   #############################
   ###     classic models    ###
   #############################
   
-  # Holt-Winters (HW)
+  ##########################
+  #### fitting ETS #########
+  ##########################
   
-  final_ETS1 <- try(ets(y, model = "AAA"), silent = TRUE)
+  ets_models <- c("ANN","AAN","AAdN","AAA","AAdA",
+                  "MNN","MAN","MAdN","MNA","MAM","MAdA","ZZZ")
   
-  aic_ETS <- if(inherits(final_ETS1, "try-error")){
-    Inf
-    } else {
-      final_ETS1$aic
-    }
+  ets_l <- list()
+  aic_ETS <- RMSE_ETS <- MAE_ETS <- MAPE_ETS <- c()
   
-  # ARMA
-  arma_l <- list()
-  minARMA <- numeric(nrow(mat))
-  
-  for (l in 1:nrow(mat)) {
-    pq <- mat[l, ]
-    print(c(l, "ARMA"))
+  for(l in 1:length(ets_models)){
+    
+    print(c(l,ets_models[l]))
     
     fit <- try(
-      Arima(y, order = c(pq[1], 0, pq[3])),
-      silent = TRUE
+      ets(y, model=ets_models[l]),
+      silent=T
     )
     
-    if (inherits(fit, "try-error")) {
-      minARMA[l] <- Inf
-      arma_l[[l]] <- NULL
-    } else {
-      minARMA[l] <- fit$aic
-      arma_l[[l]] <- fit
+    ets_l[[l]] <- fit
+    
+    if(inherits(fit,"try-error")){
+      aic_ETS[l] <- Inf
+      RMSE_ETS[l] <- MAE_ETS[l] <- MAPE_ETS[l] <- NA
+    }else{
+      aic_ETS[l] <- round(fit$aic,4)
+      
+      acc <- accuracy(fit)
+      
+      RMSE_ETS[l] <- acc[1,"RMSE"]
+      MAE_ETS[l] <- acc[1,"MAE"]
+      MAPE_ETS[l] <- acc[1,"MAPE"]
     }
   }
   
-  id_arma <- which.min(minARMA)
-  final_ARMA1 <- arma_l[[id_arma]]
+  ## Results table
+  Top_ETS <- data.frame(
+    Index=1:length(ets_models),
+    Model=ets_models,
+    AIC=aic_ETS,
+    RMSE=RMSE_ETS,
+    MAE=MAE_ETS,
+    MAPE=MAPE_ETS
+  )
   
-  # SARMA
-  sarma_l <- list()
-  minSARMA <- c()
-  matsarma<-matrix(c(1,1,1,1,1,1,0,1,1,1,1,0),ncol=4,byrow=T)
-  for (l in 1:nrow(matsarma)) {
-    pqs <- matsarma[l,]
-    print(c(l, "SARMA"))
+  Top_ETS <- Top_ETS[order(Top_ETS$AIC),]
+  
+  ## Select the model with the lowest AIC
+  if(all(is.infinite(aic_ETS))){
+    final_ETS1 <- NULL
+    modelo_ETS1 <- NA
+    warning("All ETS models failed.")
+    }else{
+      id_ETS <- which.min(aic_ETS)
+      final_ETS1 <- ets_l[[id_ETS]]
+      modelo_ETS1 <- ets_models[id_ETS]
+      }
+  
+  ##########################
+  #### fitting SARMA #######
+  ##########################
+  
+  sarma_l<-list()
+  
+  aic_SARMA<-pv_LB_SARMA<-int_sig_SARMA<-model_sig_SARMA<-
+    RMSE_SARMA<-MAPE_SARMA<-MAE_SARMA<-c()
+  
+  matsarma<-matrix(c(
+    1,1,1,1,
+    1,2,1,2,
+    1,3,1,3,
+    2,1,2,1,
+    2,2,2,2,
+    2,3,2,3,
+    3,1,3,1,
+    3,2,3,2,
+    3,3,3,3
+  ),ncol=4,byrow=T)
+  
+  for(l in 1:nrow(matsarma)){
     
-    fit <- try(
+    pqs<-matsarma[l,]
+    print(c(l,"SARMA"))
+    
+    fit<-try(
       Arima(
         y,
-        order = c(pqs[1], 0, pqs[2]),
-        seasonal = list(order = c(pqs[3], 0, pqs[4]), period = s)
+        order=c(pqs[1],0,pqs[2]),
+        seasonal=list(order=c(pqs[3],0,pqs[4]),period=s)
       ),
-      silent = TRUE
+      silent=T
     )
     
-    if (inherits(fit, "try-error")) {
-      aic <- Inf
-    } else {
-      aic <- fit$aic
-    }
+    sarma_l[[l]]<-fit
     
-    sarma_l[[l]] <- fit
-    minSARMA[l] <- aic
+    if(inherits(fit,"try-error")){
+      aic_SARMA[l]<-Inf
+      pv_LB_SARMA[l]<-NA
+      int_sig_SARMA[l]<-0
+      model_sig_SARMA[l]<-0
+      RMSE_SARMA[l]<-MAE_SARMA[l]<-MAPE_SARMA[l]<-NA
+      
+    }else{
+      
+      aic_SARMA[l]<-round(fit$aic,4)
+      
+      pv_LB_SARMA[l]<-round(
+        Box.test(
+          residuals(fit),
+          lag=20,
+          type="Ljung-Box",
+          fitdf=pqs[1]+pqs[2]+pqs[3]+pqs[4]
+        )$p.value,4
+      )
+      
+      ## Significance indicators (not directly available from Arima)
+      int_sig_SARMA[l]<-NA
+      model_sig_SARMA[l]<-NA
+      
+      acc<-accuracy(fit)
+      
+      RMSE_SARMA[l]<-acc[1,"RMSE"]
+      MAE_SARMA[l]<-acc[1,"MAE"]
+      MAPE_SARMA[l]<-acc[1,"MAPE"]
+    }
   }
   
-  id_sarma <- which.min(minSARMA)
-  final_SARMA1 <- sarma_l[[id_sarma]]
+  ## Results table
+  Top_SARMA<-data.frame(
+    Index=1:nrow(matsarma),
+    AIC=aic_SARMA,
+    pvalue_LB=pv_LB_SARMA,
+    int_sig=int_sig_SARMA,
+    model_sig=model_sig_SARMA,
+    RMSE=RMSE_SARMA,
+    MAPE=MAPE_SARMA,
+    MAE=MAE_SARMA
+  )
+  
+  Top_SARMA<-Top_SARMA[order(Top_SARMA$AIC),]
+  
+  ## Select the best model
+  Select_SARMA<-Top_SARMA %>%
+    filter(pvalue_LB>0.05) %>%
+    filter(RMSE==min(RMSE,na.rm=TRUE))
+  
+  if(nrow(Select_SARMA)>0){
+    final_SARMA1<-sarma_l[[Select_SARMA$Index[1]]]
+    }else{
+      final_SARMA1<-NULL
+      warning("No SARMA model passed the Ljung-Box criterion.")
+      }
   
   
   ###########################
@@ -514,7 +861,7 @@ for(i in R){
   pv_LB_BXII1<-Box.test(final1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_Ray1<-Box.test(final_Ray1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_GAMMA1 <- try(
-    Box.test(final_GAMMA1$residuals, lag = 20, type = "Ljung")$p.value,
+    Box.test(final_GAMMA1$resid_tv, lag = 20, type = "Ljung")$p.value,
     silent = TRUE
   )
   
@@ -523,7 +870,6 @@ for(i in R){
   }
   pv_LB_BXIIARMA1<-Box.test(finalBXIIARMA1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_ETS1<-Box.test(final_ETS1$residuals, lag = 20, type = "Ljung")$p.value
-  pv_LB_ARMA1<-Box.test(final_ARMA1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_SARMA1<-Box.test(final_SARMA1$residuals, lag = 20, type = "Ljung")$p.value
   
   
@@ -541,7 +887,6 @@ for(i in R){
     final_GAMMA[[j]]<-final_GAMMA1
     finalBXIIARMA[[j]]<-finalBXIIARMA1
     final_ETS[[j]]<-final_ETS1
-    final_ARMA[[j]]<-final_ARMA1
     final_SARMA[[j]]<-final_SARMA1
     modelo[j]<-modelo1
     modelo_Ray[j]<-modelo_Ray1
@@ -553,7 +898,7 @@ for(i in R){
     pv_LB_BXII[j]<-Box.test(final1$residuals, lag = 20, type = "Ljung")$p.value
     pv_LB_Ray[j]<-Box.test(final_Ray1$residuals, lag = 20, type = "Ljung")$p.value
     pv_LB_GAMMA[j] <- try(
-      Box.test(final_GAMMA1$residuals, lag = 20, type = "Ljung")$p.value,
+      Box.test(final_GAMMA1$resid_tv, lag = 20, type = "Ljung")$p.value,
       silent = TRUE
     )
     
@@ -562,16 +907,15 @@ for(i in R){
     }
     pv_LB_BXIIARMA[j]<-Box.test(finalBXIIARMA1$residuals, lag = 20, type = "Ljung")$p.value
     pv_LB_ETS[j]<-Box.test(final_ETS1$residuals, lag = 20, type = "Ljung")$p.value
-    pv_LB_ARMA[j]<-Box.test(final_ARMA1$residuals, lag = 20, type = "Ljung")$p.value
     pv_LB_SARMA[j]<-Box.test(final_SARMA1$residuals, lag = 20, type = "Ljung")$p.value
     
     acuracia1[1,j,]<-c(accuracy(final[[j]]$fitted, y)[,c(2,3,5)],final[[j]]$aic,final[[j]]$bic)
     acuracia1[2,j,]<-c(accuracy(final_Ray[[j]]$fitted, y)[,c(2,3,5)],final_Ray[[j]]$aic,final_Ray[[j]]$bic)
     if (!is.null(final_GAMMA[[j]]) &&
-        !is.null(final_GAMMA[[j]]$fitted)) {
+        !is.null(final_GAMMA[[j]]$mean_tv)) {
       
       acuracia1[3, j, ] <- c(
-        accuracy(final_GAMMA[[j]]$fitted, y)[, c(2,3,5)],
+        accuracy(final_GAMMA[[j]]$mean_tv, y)[, c(2,3,5)],
         final_GAMMA[[j]]$aic,
         final_GAMMA[[j]]$bic
       )
@@ -583,14 +927,13 @@ for(i in R){
     }
     acuracia1[4,j,]<-c(accuracy(finalBXIIARMA[[j]]$fitted, y)[,c(2,3,5)],finalBXIIARMA[[j]]$aic,finalBXIIARMA[[j]]$bic)
     acuracia1[5,j,]<-c(accuracy(final_ETS[[j]]$fitted, y)[,c(2,3,5)],final_ETS[[j]]$aic,final_ETS[[j]]$bic)
-    acuracia1[6,j,]<-c(accuracy(final_ARMA[[j]]$fitted, y)[,c(2,3,5)],final_ARMA[[j]]$aic,final_ARMA[[j]]$bic)
-    acuracia1[7,j,]<-c(accuracy(final_SARMA[[j]]$fitted, y)[,c(2,3,5)],final_SARMA[[j]]$aic,final_SARMA[[j]]$bic)
+    acuracia1[6,j,]<-c(accuracy(final_SARMA[[j]]$fitted, y)[,c(2,3,5)],final_SARMA[[j]]$aic,final_SARMA[[j]]$bic)
     
     
     ###############
     #### plots ####  
     ###############
-    setwd("~/GitHub/BXII-GAS/Apply BXII-GAS")
+    setwd(file.path(path, "Apply BXII-GAS"))
     
     # time series plot
     time_series_plot<-paste0("Plots/time_series_plot",i,".pdf")
@@ -617,19 +960,19 @@ for(i in R){
     # plot(y,main="")
     lines(final[[j]]$fitted, col=2,lty=2,lwd=2)
     lines(final_Ray[[j]]$fitted, col=5,lty=3,lwd=1.7)
+    lines(ts(final_GAMMA[[j]]$mean_tv,end = c(2023, 8),frequency = 12), col=8,lty=3.5,lwd=1.5)
     lines(finalBXIIARMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
     lines(final_SARMA[[j]]$fitted, col=7,lty=5,lwd=1.8)
-    #lines(final_ARMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
     lines(final_ETS[[j]]$fitted, col=3,lty=6,lwd=1.9)
     legend("topleft", 
-           c("Original","BXII-GAS","Ray-GAS","BXII-ARMA","SARMA",#"ARMA",
+           c("Original","BXII-GAS","Ray-GAS","gamma-GAS","BXII-ARMA","SARMA",
              "ETS" 
              ),
-           col = c(1,2,5,6,7,#6,
+           col = c(1,2,5,8,6,7,4,
                    3),
-           lty= c(1,2,3,4,5,#4,
+           lty= c(1,2,3,3.5,4,5.4,5,
                   6),
-           lwd = c(1,2,1.7,1.6,1.8,#1.6,
+           lwd = c(1,2,1.7,1.5,1.6,1.8,1.7,
                    1.9), bty="n", cex = 1)
     dev.off()
     # ---------------------------------
@@ -657,10 +1000,10 @@ for(i in R){
     # ---------------------------------
     resid_plot <- paste0("Plots/resid_plotgamma", i, ".pdf")
     if (!is.null(final_GAMMA[[j]]) &&
-        !is.null(final_GAMMA[[j]]$residuals) &&
-        length(final_GAMMA[[j]]$residuals) > 0) {
+        !is.null(final_GAMMA[[j]]$resid_tv) &&
+        length(final_GAMMA[[j]]$resid_tv) > 0) {
       pdf(resid_plot, width = 4, height = 4)
-      acf(final_GAMMA[[j]]$residuals, main = "")
+      acf(final_GAMMA[[j]]$resid_tv, main = "")
       dev.off()
       
     }
@@ -677,13 +1020,6 @@ for(i in R){
     pdf(resid_plot,width = 4, height = 4)
     # acf ETS residuals 
     acf(final_ETS[[j]]$residuals,main="ETS")
-    dev.off()
-    
-    # ---------------------------------
-    resid_plot<-paste0("Plots/resid_plotARMA",i,".pdf")
-    pdf(resid_plot,width = 4, height = 4)
-    # acf ARMA residuals 
-    acf(final_ARMA[[j]]$residuals,main="ARMA")
     dev.off()
     
     # ---------------------------------
@@ -761,7 +1097,7 @@ results<-data.frame(
   RMSE_SARMA=acuracia1[7,,1],
   pv_LB_BXII=round(pv_LB_BXII,4),
   pv_LB_Ray=round(pv_LB_Ray,4),
-  #pv_LB_GAMMA=round(pv_LB_GAMMA,4,NA),
+  pv_LB_GAMMA=round(pv_LB_GAMMA,4),
   pv_LB_BXIIARMA=round(pv_LB_BXIIARMA,4),
   pv_LB_ETS=round(pv_LB_ETS,4),
   pv_LB_ARMA=round(pv_LB_ARMA,4),
@@ -769,35 +1105,17 @@ results<-data.frame(
   )
 rownames(results)<-nome
 
-setwd("~/GitHub/BXII-GAS/Apply BXII-GAS")
+setwd(file.path(path, "Apply BXII-GAS"))
 saving<-paste0("app_hid_new.RData")
 save.image(saving)
 end_time <- Sys.time()
 duration<-(end_time - start_time)
 print(duration)
 
-results[,c(4:7,11:14,18:21,25:28,32:35,39:42)]
-
-
 resultados<-results
-#resultados[2,4]<-0
 resultados<-round(resultados,4)
-#resultados[2,4]<-"_"
 library(gt)
 
 # Criar uma tabela estilizada
 resultados[,] %>%
   gt()
-
-#library(gt)
-
-#results[results > 1.797693e+307] <- 0
-#resultados<-round(results,4)
-
-#resultados[c(12,14,15,16),c(7:15)] %>%
-#  gt()
-
-
-#results_out[c(12,14,15,16),] %>%
-#  gt()
- 

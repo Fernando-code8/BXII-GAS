@@ -21,8 +21,8 @@ bxiiarmaCOV.fit<-function (y, ar = NA, ma = NA, tau = .5,link = "log",
                          h=12, diag=0,X = NA,X_hat=NA)
 {
   library(extRemes)
-  setwd("~/GitHub/BXII-GAS/BXII_ARMA")
-  source('bxii-funcs.r')
+  setwd(file.path(path, "BXII_ARMA"))
+  source('bxii-funcs.R')
   if (min(y) <0)
     stop("OUT OF SUPPORT!")
   
