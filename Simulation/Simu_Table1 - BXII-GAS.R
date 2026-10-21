@@ -2,7 +2,10 @@
 # Created by Fernando J M de Araújo (nandomonteiro418@gmail.com), April/2024
 rm(list=ls())
 
-setwd("C:/Users/nando/OneDrive/Desktop/mestrado UFRGS/Dissertação/Scripts Atual BXII-GAS/BXII-GAS")
+# Main project folder
+path <- "~/Fernando/BXII-GAS"
+
+setwd(file.path(path, "BXII-GAS"))
 source("simu_BXII-GAS.R")
 source("GASBXIIFit.R")
 library(beepr)
@@ -16,6 +19,7 @@ vn<-c(
   )
 R<-1000
 bug<-0
+tau<-0.05
 
 # w<-0.1;A=.2;B=.1;c=0.9;beta=c(0.1,0.5) 
 
@@ -61,8 +65,8 @@ for(j in 1:length(vn)){
   bug<-0
   while(i<=R){
     print(c(i,j))
-    y <- simu.BXIIGAS(n,A=A,B=B,w=w,c=c,beta=beta,tau=0.5,X=cov)
-    # y <- simu.BXIIGAS(n,A=A,B=B,w=w,c=c,tau=0.5)
+    y <- simu.BXIIGAS(n,A=A,B=B,w=w,c=c,beta=beta,tau=tau,X=cov)
+    # y <- simu.BXIIGAS(n,A=A,B=B,w=w,c=c,tau=tau)
     result <- try(BXIIGAS.fit(y,ar=1,ma=1,X=X,X_hat=X_hat,
                               h=length(t_hat)),silent = T)
     if(class(result)=="try-error" || 
@@ -110,7 +114,11 @@ for(j in 1:length(vn)){
              cc
              )/R
 
-  }
+}
+
+
+
+
 scen=2
 
 setwd("C:/Users/nando/OneDrive/Desktop/mestrado UFRGS/Dissertação/Scripts Atual BXII-GAS/Simulation")

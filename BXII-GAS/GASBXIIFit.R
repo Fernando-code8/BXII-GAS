@@ -106,7 +106,7 @@ BXIIGAS.fit <- function (y, ar, ma,X=NA, X_hat=NA, tau=0.5 ,link = "log", h1=1)
     } else beta <- as.matrix(z[(p1+q1+2):(p1+q1+1+k)])
     c <- z[p1+q1+k+2]
     
-    BXIIGAS.score(w,A=A,B=B,beta=beta,c,y,tau=.5,
+    BXIIGAS.score(w,A=A,B=B,beta=beta,c,y,tau=tau,
                 ar=ar,ma=ma,X=X,link = "log")
   }
   

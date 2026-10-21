@@ -73,8 +73,9 @@ mat<-matrix(c(rep(1,3),rep(2,3),rep(3,3),rep(1:3,3)),ncol=2,byrow=F)
 gamma_orders <- mat
 
 acuracia1<-array(NA,c(6,length(R),5))
-pv_LB_BXII<-pv_LB_Ray<-pv_LB_GAMMA<-pv_LB_BXIIARMA<-pv_LB_ETS<-pv_LB_SARMA<-
-  nome<-modelo<-modelo_Ray<-modelo_GAMMA<-modeloBXIIARMA<-c()
+
+pv_LB_BXII<-pv_LB_Ray<-pv_LB_GAMMA<-pv_LB_BXIIARMA<-pv_LB_ETS<-pv_LB_SARMA<-c()
+nome<-modelo<-modelo_Ray<-modelo_GAMMA<-modeloBXIIARMA<-modelo_ETS<-c()
 final<-final_Ray<-final_GAMMA<-finalBXIIARMA<-final_ETS<-final_SARMA<-list()
 start_time <- Sys.time()
 j<-0
@@ -190,22 +191,19 @@ for(i in R){
   Top_BXIIsin<-data.frame(
     Index=1:nrow(mat),AIC=aic_BXII_sin,pvalue_LB=pv_LB_BXIIsin,
     int_sig=int_sig_BXIIsin,model_sig=model_sig_BXIIsin,
-    RMSE=RMSE_BXIIsin,MAPE=MAPE_BXIIsin,MAE=MAE_BXIIsin,
-    model=model_BXIIsin
+    RMSE=RMSE_BXIIsin,MAPE=MAPE_BXIIsin,MAE=MAE_BXIIsin
   )
   
   Top_BXIIcos<-data.frame(
     Index=1:nrow(mat),AIC=aic_BXII_cos,pvalue_LB=pv_LB_BXIIcos,
     int_sig=int_sig_BXIIcos,model_sig=model_sig_BXIIcos,
-    RMSE=RMSE_BXIIcos,MAPE=MAPE_BXIIcos,MAE=MAE_BXIIcos,
-    model=model_BXIIcos
+    RMSE=RMSE_BXIIcos,MAPE=MAPE_BXIIcos,MAE=MAE_BXIIcos
   )
   
   Top_BXIIsincos<-data.frame(
     Index=1:nrow(mat),AIC=aic_BXII_sincos,pvalue_LB=pv_LB_BXIIsincos,
     int_sig=int_sig_BXIIsincos,model_sig=model_sig_BXIIsincos,
-    RMSE=RMSE_BXIIsincos,MAPE=MAPE_BXIIsincos,MAE=MAE_BXIIsincos,
-    model=model_BXIIsincos
+    RMSE=RMSE_BXIIsincos,MAPE=MAPE_BXIIsincos,MAE=MAE_BXIIsincos
   )
   
   Top_BXII<-rbind(
@@ -547,14 +545,14 @@ for(i in R){
   
   if(nrow(Select_gamma)>0){
     if(Select_gamma$Type[1]=="Sin"){
-      final_gamma1<-hidgammasin_l[[Select_gamma$Index[1]]]
-      modelo_gamma1<-"gamma Sin"
+      final_GAMMA1<-hidgammasin_l[[Select_gamma$Index[1]]]
+      modelo_GAMMA1<-"gamma Sin"
     }else if(Select_gamma$Type[1]=="Cos"){
-      final_gamma1<-hidgammacos_l[[Select_gamma$Index[1]]]
-      modelo_gamma1<-"gamma Cos"
+      final_GAMMA1<-hidgammacos_l[[Select_gamma$Index[1]]]
+      modelo_GAMMA1<-"gamma Cos"
     }else{
-      final_gamma1<-hidgammasincos_l[[Select_gamma$Index[1]]]
-      modelo_gamma1<-"gamma SinCos"
+      final_GAMMA1<-hidgammasincos_l[[Select_gamma$Index[1]]]
+      modelo_GAMMA1<-"gamma SinCos"
     }
   }
   
@@ -685,14 +683,14 @@ for(i in R){
   
   if(nrow(Select_BXIIARMA)>0){
     if(Select_BXIIARMA$Type[1]=="Sin"){
-      final_BXIIARMA1<-hidBXIIARMAsin_l[[Select_BXIIARMA$Index[1]]]
-      modelo_BXIIARMA1<-"BXIIARMA Sin"
+      finalBXIIARMA1<-hidBXIIARMAsin_l[[Select_BXIIARMA$Index[1]]]
+      modeloBXIIARMA1<-"BXIIARMA Sin"
     }else if(Select_BXIIARMA$Type[1]=="Cos"){
-      final_BXIIARMA1<-hidBXIIARMAcos_l[[Select_BXIIARMA$Index[1]]]
-      modelo_BXIIARMA1<-"BXIIARMA Cos"
+      finalBXIIARMA1<-hidBXIIARMAcos_l[[Select_BXIIARMA$Index[1]]]
+      modeloBXIIARMA1<-"BXIIARMA Cos"
     }else{
-      final_BXIIARMA1<-hidBXIIARMAsincos_l[[Select_BXIIARMA$Index[1]]]
-      modelo_BXIIARMA1<-"BXIIARMA SinCos"
+      finalBXIIARMA1<-hidBXIIARMAsincos_l[[Select_BXIIARMA$Index[1]]]
+      modeloBXIIARMA1<-"BXIIARMA SinCos"
     }
   }
   
@@ -748,6 +746,7 @@ for(i in R){
   Top_ETS <- Top_ETS[order(Top_ETS$AIC),]
   
   ## Select the model with the lowest AIC
+  
   if(all(is.infinite(aic_ETS))){
     final_ETS1 <- NULL
     modelo_ETS1 <- NA
@@ -764,19 +763,37 @@ for(i in R){
   
   sarma_l<-list()
   
-  aic_SARMA<-pv_LB_SARMA<-int_sig_SARMA<-model_sig_SARMA<-
+  aic_SARMA<-pv_LB_SARMAmodel<-int_sig_SARMA<-model_sig_SARMA<-
     RMSE_SARMA<-MAPE_SARMA<-MAE_SARMA<-c()
   
   matsarma<-matrix(c(
+    1,1,0,1,
+    1,1,1,0,
     1,1,1,1,
-    1,2,1,2,
-    1,3,1,3,
-    2,1,2,1,
-    2,2,2,2,
-    2,3,2,3,
-    3,1,3,1,
-    3,2,3,2,
-    3,3,3,3
+    1,2,0,1,
+    1,2,1,0,
+    1,2,1,1,
+    1,3,0,1,
+    1,3,1,0,
+    1,3,1,1,
+    2,1,0,1,
+    2,1,1,0,
+    2,1,1,1,
+    2,2,0,1,
+    2,2,1,0,
+    2,2,1,1,
+    2,3,0,1,
+    2,3,1,0,
+    2,3,1,1,
+    3,1,0,1,
+    3,1,1,0,
+    3,1,1,1,
+    3,2,0,1,
+    3,2,1,0,
+    3,2,1,1,
+    3,3,0,1,
+    3,3,1,0,
+    3,3,1,1
   ),ncol=4,byrow=T)
   
   for(l in 1:nrow(matsarma)){
@@ -797,7 +814,7 @@ for(i in R){
     
     if(inherits(fit,"try-error")){
       aic_SARMA[l]<-Inf
-      pv_LB_SARMA[l]<-NA
+      pv_LB_SARMAmodel[l]<-NA
       int_sig_SARMA[l]<-0
       model_sig_SARMA[l]<-0
       RMSE_SARMA[l]<-MAE_SARMA[l]<-MAPE_SARMA[l]<-NA
@@ -805,22 +822,10 @@ for(i in R){
     }else{
       
       aic_SARMA[l]<-round(fit$aic,4)
-      
-      pv_LB_SARMA[l]<-round(
-        Box.test(
-          residuals(fit),
-          lag=20,
-          type="Ljung-Box",
-          fitdf=pqs[1]+pqs[2]+pqs[3]+pqs[4]
-        )$p.value,4
-      )
-      
-      ## Significance indicators (not directly available from Arima)
-      int_sig_SARMA[l]<-NA
-      model_sig_SARMA[l]<-NA
-      
+      pv_LB_SARMAmodel[l]<-round(Box.test(residuals(fit),lag=20,type="Ljung")$p.value,4)
+      int_sig_SARMA[l]<-as.numeric(coeftest(fit)[1,4]<0.05)
+      model_sig_SARMA[l]<-as.numeric(all(coeftest(fit)[2:nrow(coeftest(fit)),4]<0.05))
       acc<-accuracy(fit)
-      
       RMSE_SARMA[l]<-acc[1,"RMSE"]
       MAE_SARMA[l]<-acc[1,"MAE"]
       MAPE_SARMA[l]<-acc[1,"MAPE"]
@@ -831,7 +836,7 @@ for(i in R){
   Top_SARMA<-data.frame(
     Index=1:nrow(matsarma),
     AIC=aic_SARMA,
-    pvalue_LB=pv_LB_SARMA,
+    pvalue_LB=pv_LB_SARMAmodel,
     int_sig=int_sig_SARMA,
     model_sig=model_sig_SARMA,
     RMSE=RMSE_SARMA,
@@ -842,9 +847,15 @@ for(i in R){
   Top_SARMA<-Top_SARMA[order(Top_SARMA$AIC),]
   
   ## Select the best model
-  Select_SARMA<-Top_SARMA %>%
-    filter(pvalue_LB>0.05) %>%
-    filter(RMSE==min(RMSE,na.rm=TRUE))
+  if(sum(na.omit(Top_SARMA$model_sig==1))==0){
+    Select_SARMA<-Top_SARMA %>%
+      filter(pvalue_LB>0.05) %>%
+      filter(RMSE==min(RMSE))
+  }else{
+    Select_SARMA<-Top_SARMA %>%
+      filter(pvalue_LB>0.05,model_sig==1) %>%
+      filter(RMSE==min(RMSE))
+  }
   
   if(nrow(Select_SARMA)>0){
     final_SARMA1<-sarma_l[[Select_SARMA$Index[1]]]
@@ -892,6 +903,7 @@ for(i in R){
     modelo_Ray[j]<-modelo_Ray1
     modelo_GAMMA[j]<-modelo_GAMMA1
     modeloBXIIARMA[j]<-modeloBXIIARMA1
+    modelo_ETS[j]<-modelo_ETS1
     nome[j]<-substring(colnames(dados)[i],1,nchar(colnames(dados)[i])#-10
                        )
     print(nome[j])
@@ -958,21 +970,21 @@ for(i in R){
     par(mfrow=c(1,1))
     plot(y,main=nome[j],ylim=c(min(y),max(y)+0.15))
     # plot(y,main="")
-    lines(final[[j]]$fitted, col=2,lty=2,lwd=2)
     lines(final_Ray[[j]]$fitted, col=5,lty=3,lwd=1.7)
     lines(ts(final_GAMMA[[j]]$mean_tv,end = c(2023, 8),frequency = 12), col=8,lty=3.5,lwd=1.5)
     lines(finalBXIIARMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
     lines(final_SARMA[[j]]$fitted, col=7,lty=5,lwd=1.8)
     lines(final_ETS[[j]]$fitted, col=3,lty=6,lwd=1.9)
+    lines(final[[j]]$fitted, col=2,lty=2,lwd=2)
     legend("topleft", 
            c("Original","BXII-GAS","Ray-GAS","gamma-GAS","BXII-ARMA","SARMA",
              "ETS" 
              ),
-           col = c(1,2,5,8,6,7,4,
+           col = c(1,2,5,8,6,7,
                    3),
-           lty= c(1,2,3,3.5,4,5.4,5,
+           lty= c(1,2,3,3.5,4,5,
                   6),
-           lwd = c(1,2,1.7,1.5,1.6,1.8,1.7,
+           lwd = c(1,2,1.7,1.5,1.6,1.8,
                    1.9), bty="n", cex = 1)
     dev.off()
     # ---------------------------------
@@ -1019,14 +1031,14 @@ for(i in R){
     resid_plot<-paste0("Plots/resid_plotETS",i,".pdf")
     pdf(resid_plot,width = 4, height = 4)
     # acf ETS residuals 
-    acf(final_ETS[[j]]$residuals,main="ETS")
+    acf(final_ETS[[j]]$residuals,main="")
     dev.off()
     
     # ---------------------------------
     resid_plot<-paste0("Plots/resid_plotSARMA",i,".pdf")
     pdf(resid_plot,width = 4, height = 4)
     # acf SARMA residuals 
-    acf(final_SARMA[[j]]$residuals,main="SARMA")
+    acf(final_SARMA[[j]]$residuals,main="")
     dev.off()
 }
 
@@ -1050,13 +1062,13 @@ type_model_BXII<-table(modelo)
 type_model_Ray<-table(modelo_Ray)
 type_model_GAMMA<-table(modelo_GAMMA)
 type_model_BXIIARMA<-table(modeloBXIIARMA)
+type_model_ETS<-table(modelo_ETS)
 
 count_LB_BXII<-sum(round(pv_LB_BXII,4)>0.05)
 count_LB_Ray<-sum(round(na.omit(pv_LB_Ray),4)>0.05)
 count_LB_GAMMA<-sum(round(pv_LB_GAMMA,4)>0.05)
 count_LB_BXIIARMA<-sum(round(pv_LB_BXIIARMA,4)>0.05)
 count_LB_ETS<-sum(round(na.omit(pv_LB_ETS),4)>0.05)
-count_LB_ARMA<-sum(round(pv_LB_ARMA,4)>0.05)
 count_LB_SARMA<-sum(round(pv_LB_SARMA,4)>0.05)
 
 results<-data.frame(
@@ -1065,42 +1077,36 @@ results<-data.frame(
   AIC_GAMMA=acuracia1[3,,4],
   AIC_BXIIARMA=acuracia1[4,,4],
   AIC_ETS=acuracia1[5,,4],
-  AIC_ARMA=acuracia1[6,,4],
-  AIC_SARMA=acuracia1[7,,4],
+  AIC_SARMA=acuracia1[6,,4],
   BIC_BXII=acuracia1[1,,5],
   BIC_Ray=acuracia1[2,,5],
   BIC_GAMMA=acuracia1[3,,5],
   BIC_BXIIARMA=acuracia1[4,,5], 
   BIC_ETS=acuracia1[5,,5], 
-  BIC_ARMA=acuracia1[6,,5], 
-  BIC_SARMA=acuracia1[7,,5], 
+  BIC_SARMA=acuracia1[6,,5], 
   MAE_BXII=acuracia1[1,,2],
   MAE_Ray=acuracia1[2,,2],
   MAE_GAMMA=acuracia1[3,,2],
   MAE_BXIIARMA=acuracia1[4,,2],
   MAE_ETS=acuracia1[5,,2],
-  MAE_ARMA=acuracia1[6,,2],
-  MAE_SARMA=acuracia1[7,,2],
+  MAE_SARMA=acuracia1[6,,2],
   MAPE_BXII=acuracia1[1,,3],
   MAPE_Ray=acuracia1[2,,3],
   MAPE_GAMMA=acuracia1[3,,3],
   MAPE_BXIIARMA=acuracia1[4,,3],
   MAPE_ETS=acuracia1[5,,3],
-  MAPE_ARMA=acuracia1[6,,3],
-  MAPE_SARMA=acuracia1[7,,3],
+  MAPE_SARMA=acuracia1[6,,3],
   RMSE_BXII=acuracia1[1,,1],
   RMSE_Ray=acuracia1[2,,1],
   RMSE_GAMMA=acuracia1[3,,1],
   RMSE_BXIIARMA=acuracia1[4,,1],
   RMSE_ETS=acuracia1[5,,1],
-  RMSE_ARMA=acuracia1[6,,1],
-  RMSE_SARMA=acuracia1[7,,1],
+  RMSE_SARMA=acuracia1[6,,1],
   pv_LB_BXII=round(pv_LB_BXII,4),
   pv_LB_Ray=round(pv_LB_Ray,4),
   pv_LB_GAMMA=round(pv_LB_GAMMA,4),
   pv_LB_BXIIARMA=round(pv_LB_BXIIARMA,4),
   pv_LB_ETS=round(pv_LB_ETS,4),
-  pv_LB_ARMA=round(pv_LB_ARMA,4),
   pv_LB_SARMA=round(pv_LB_SARMA,4)
   )
 rownames(results)<-nome

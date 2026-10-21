@@ -97,7 +97,7 @@ dst.c <- function(mu0,y,c,tau){
 }
 
 BXIIGAS.score <- function(w,A,B,beta=0,c,y,
-                        tau=0.5, ar=NA, ma=NA, X=NA, link = "log")
+                        tau=tau, ar=NA, ma=NA, X=NA, link = "log")
 {
   ##### link function definitions
   linktemp <- substitute(link)
