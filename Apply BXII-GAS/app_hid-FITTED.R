@@ -16,7 +16,11 @@ library(forecast)
 library(lmtest)
 
 # Main project folder
-path <- "~/Fernando/BXII-GAS"
+if(Sys.info()["sysname"]=="Windows"){
+  path <- "C:/Users/Fernando/Documents/GitHub/BXII-GAS" # Windowns
+}else{
+  path <- "~/Fernando/BXII-GAS" # Ubuntu
+}
 
 setwd(file.path(path, "BXII-GAS"))
 source("GASBXIIFit.R")
@@ -60,7 +64,7 @@ Desc
 #dados<-dados[,-c(7,9:11,14:15,21:22,24:25,27)]
 #dados<-dados[,-c(3,5:9,13,15)]
 #dados<-dados[,-c(3,4,7)]
-dados<-dados[,c(1,2,18,19,28)]
+#dados<-dados[,c(1,2,18,19,28)]
 View(dados)
 
 datas <- seq(as.Date("2010-01-01"), as.Date("2024-08-31"), by = "day")
@@ -79,9 +83,12 @@ nome<-modelo<-modelo_Ray<-modelo_GAMMA<-modeloBXIIARMA<-modelo_ETS<-c()
 final<-final_Ray<-final_GAMMA<-finalBXIIARMA<-final_ETS<-final_SARMA<-list()
 start_time <- Sys.time()
 j<-0
-
+pvalor<-0.10
+tau<-0.25
 setwd(file.path(path, "Apply BXII-GAS"))
-for(i in R){
+for(i in 18:33
+  #R
+){
   ################################
   #### defining the variables ####
   ################################
@@ -152,8 +159,8 @@ for(i in R){
       }else{
         aic<-round(fit$aic,4)
         pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
-        int_sig<-as.numeric(fit$model[1,4]<0.05)
-        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<0.05))
+        int_sig<-as.numeric(fit$model[1,4]<pvalor)
+        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<pvalor))
         RMSE<-accuracy(y,fit$fitted)[,2]
         MAE<-accuracy(y,fit$fitted)[,3]
         MAPE<-accuracy(y,fit$fitted)[,5]
@@ -289,8 +296,8 @@ for(i in R){
       }else{
         aic<-round(fit$aic,4)
         pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
-        int_sig<-as.numeric(fit$model[1,4]<0.05)
-        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<0.05))
+        int_sig<-as.numeric(fit$model[1,4]<pvalor)
+        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<pvalor))
         RMSE<-accuracy(y,fit$fitted)[,2]
         MAE<-accuracy(y,fit$fitted)[,3]
         MAPE<-accuracy(y,fit$fitted)[,5]
@@ -467,8 +474,8 @@ for(i in R){
       }else{
         aic<-round(fit$aic,4)
         pv<-round(Box.test(fit$resid_tv,lag=20,type="Ljung")$p.value,4)
-        int_sig<-as.numeric(fit$coef_pval[1]<0.05)
-        model_sig<-as.numeric(all(fit$coef_pval[2:length(fit$coef_pval)]<0.05))
+        int_sig<-as.numeric(fit$coef_pval[1]<pvalor)
+        model_sig<-as.numeric(all(fit$coef_pval[2:length(fit$coef_pval)]<pvalor))
         RMSE<-accuracy(y,fit$mean_tv)[,2]
         MAE<-accuracy(y,fit$mean_tv)[,3]
         MAPE<-accuracy(y,fit$mean_tv)[,5]
@@ -572,17 +579,17 @@ for(i in R){
     
     ## Sin
     print(c(l,"BXIIARMAsin",1))
-    hidsin<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(Xsin),X_hat=as.matrix(Xsin_hat),h=1,diag=0,tau=0.5),silent=T)
+    hidsin<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(Xsin),X_hat=as.matrix(Xsin_hat),h=1,diag=0,tau=tau),silent=T)
     hidBXIIARMAsin_l[[l]]<-hidsin
     
     ## Cos
     print(c(l,"BXIIARMAcos",2))
-    hidcos<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(Xcos),X_hat=as.matrix(Xcos_hat),h=1,diag=0,tau=0.5),silent=T)
+    hidcos<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(Xcos),X_hat=as.matrix(Xcos_hat),h=1,diag=0,tau=tau),silent=T)
     hidBXIIARMAcos_l[[l]]<-hidcos
     
     ## Sin&Cos
     print(c(l,"BXIIARMAsincos",3))
-    hidsincos<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(X),X_hat=as.matrix(X_hat),h=1,diag=0,tau=0.5),silent=T)
+    hidsincos<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(X),X_hat=as.matrix(X_hat),h=1,diag=0,tau=tau),silent=T)
     hidBXIIARMAsincos_l[[l]]<-hidsincos
     
     ## Calculate model statistics
@@ -605,8 +612,8 @@ for(i in R){
       }else{
         aic<-round(fit$aic,4)
         pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
-        int_sig<-as.numeric(fit$model[1,4]<0.05)
-        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<0.05))
+        int_sig<-as.numeric(fit$model[1,4]<pvalor)
+        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<pvalor))
         RMSE<-accuracy(y,fit$fitted)[,2]
         MAE<-accuracy(y,fit$fitted)[,3]
         MAPE<-accuracy(y,fit$fitted)[,5]
@@ -823,8 +830,8 @@ for(i in R){
       
       aic_SARMA[l]<-round(fit$aic,4)
       pv_LB_SARMAmodel[l]<-round(Box.test(residuals(fit),lag=20,type="Ljung")$p.value,4)
-      int_sig_SARMA[l]<-as.numeric(coeftest(fit)[1,4]<0.05)
-      model_sig_SARMA[l]<-as.numeric(all(coeftest(fit)[2:nrow(coeftest(fit)),4]<0.05))
+      int_sig_SARMA[l]<-as.numeric(coeftest(fit)[1,4]<pvalor)
+      model_sig_SARMA[l]<-as.numeric(all(coeftest(fit)[2:nrow(coeftest(fit)),4]<pvalor))
       acc<-accuracy(fit)
       RMSE_SARMA[l]<-acc[1,"RMSE"]
       MAE_SARMA[l]<-acc[1,"MAE"]
@@ -887,11 +894,7 @@ for(i in R){
   #############################
   #### selecting resevoirs ####  
   #############################
-  
-  # if(((pv_LB_BXII1>0.05) #&
-      # (pv_LB_Ray1>0.05)&
-      # (pv_LB_GAMMA1>0.05)
-      # )>0){ 
+
     j<-j+1
     final[[j]]<-final1
     final_Ray[[j]]<-final_Ray1
@@ -920,7 +923,7 @@ for(i in R){
     pv_LB_BXIIARMA[j]<-Box.test(finalBXIIARMA1$residuals, lag = 20, type = "Ljung")$p.value
     pv_LB_ETS[j]<-Box.test(final_ETS1$residuals, lag = 20, type = "Ljung")$p.value
     pv_LB_SARMA[j]<-Box.test(final_SARMA1$residuals, lag = 20, type = "Ljung")$p.value
-    
+
     acuracia1[1,j,]<-c(accuracy(final[[j]]$fitted, y)[,c(2,3,5)],final[[j]]$aic,final[[j]]$bic)
     acuracia1[2,j,]<-c(accuracy(final_Ray[[j]]$fitted, y)[,c(2,3,5)],final_Ray[[j]]$aic,final_Ray[[j]]$bic)
     if (!is.null(final_GAMMA[[j]]) &&
@@ -1045,31 +1048,6 @@ for(i in R){
 ########################
 #### final measures ####  
 ########################
-acuracia1<-acuracia1[,1:j,]
-rankRMSE<-apply((apply(acuracia1[,,1],2,rank)==1),1,sum)
-rankMAE<-apply((apply(acuracia1[,,2],2,rank)==1),1,sum)
-rankMAPE<-apply((apply(acuracia1[,,3],2,rank)==1),1,sum)
-rankAIC<-apply((apply(acuracia1[,,4],2,rank)==1),1,sum)
-rankBIC<-apply((apply(acuracia1[,,5],2,rank)==1),1,sum)
-
-result<-rbind(rankAIC,rankBIC,
-              rankMAPE,
-              rankRMSE, rankMAE
-)
-prop.table(result,1)
-
-type_model_BXII<-table(modelo)
-type_model_Ray<-table(modelo_Ray)
-type_model_GAMMA<-table(modelo_GAMMA)
-type_model_BXIIARMA<-table(modeloBXIIARMA)
-type_model_ETS<-table(modelo_ETS)
-
-count_LB_BXII<-sum(round(pv_LB_BXII,4)>0.05)
-count_LB_Ray<-sum(round(na.omit(pv_LB_Ray),4)>0.05)
-count_LB_GAMMA<-sum(round(pv_LB_GAMMA,4)>0.05)
-count_LB_BXIIARMA<-sum(round(pv_LB_BXIIARMA,4)>0.05)
-count_LB_ETS<-sum(round(na.omit(pv_LB_ETS),4)>0.05)
-count_LB_SARMA<-sum(round(pv_LB_SARMA,4)>0.05)
 
 results<-data.frame(
   AIC_BXII=acuracia1[1,,4],
@@ -1112,7 +1090,7 @@ results<-data.frame(
 rownames(results)<-nome
 
 setwd(file.path(path, "Apply BXII-GAS"))
-saving<-paste0("app_hid_new.RData")
+saving<-paste0("app_hid_new","tau",tau,".RData")
 save.image(saving)
 end_time <- Sys.time()
 duration<-(end_time - start_time)
