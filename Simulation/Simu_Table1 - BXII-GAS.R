@@ -19,7 +19,7 @@ vn<-c(
   )
 R<-1000
 bug<-0
-tau<-0.05
+tau<-0.5
 
 # w<-0.1;A=.2;B=.1;c=0.9;beta=c(0.1,0.5) 
 
@@ -121,8 +121,8 @@ for(j in 1:length(vn)){
 
 scen=2
 
-setwd("C:/Users/nando/OneDrive/Desktop/mestrado UFRGS/Dissertação/Scripts Atual BXII-GAS/Simulation")
-saving<-paste0("results_simu/simu_scensin",scen,"R",R,".RData")
+setwd(file.path(path, "Simulation"))
+saving<-paste0("results_simu/simu_scensin",scen,"tau",tau,".RData")
 save.image(saving)
 end_time <- Sys.time()
 duration<-(end_time - start_time)
