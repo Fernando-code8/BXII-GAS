@@ -14,6 +14,7 @@ library(stats)
 library("gasmodel")
 library(forecast)
 library(lmtest)
+library(xgboost)
 
 # Main project folder
 if(Sys.info()["sysname"]=="Windows"){
@@ -76,19 +77,19 @@ mat<-matrix(c(rep(1,3),rep(2,3),rep(3,3),rep(1:3,3)),ncol=2,byrow=F)
 # IMPORTANT: Candidate grid for the gamma
 gamma_orders <- mat
 
-acuracia1<-array(NA,c(6,length(R),5))
+acuracia1<-array(NA,c(7,length(R),5))
 
-pv_LB_BXII<-pv_LB_Ray<-pv_LB_GAMMA<-pv_LB_BXIIARMA<-pv_LB_ETS<-pv_LB_SARMA<-c()
-nome<-modelo<-modelo_Ray<-modelo_GAMMA<-modeloBXIIARMA<-modelo_ETS<-c()
-final<-final_Ray<-final_GAMMA<-finalBXIIARMA<-final_ETS<-final_SARMA<-list()
+pv_LB_BXII<-pv_LB_Ray<-pv_LB_GAMMA<-pv_LB_BXIIARMA<-pv_LB_ETS<-pv_LB_SARMA<-pv_LB_XGBoost<-c()
+nome<-modelo<-modelo_Ray<-modelo_GAMMA<-modeloBXIIARMA<-modelo_ETS<-modelo_XGBoost<-c()
+final<-final_Ray<-final_GAMMA<-finalBXIIARMA<-final_ETS<-final_SARMA<-final_XGBoost<-list()
+res_XGBoost<-pred_XGBoost<-list()
+
 start_time <- Sys.time()
 j<-0
 pvalor<-0.10
 tau<-0.25
 setwd(file.path(path, "Apply BXII-GAS"))
-for(i in 18:33
-  #R
-){
+for(i in R){
   ################################
   #### defining the variables ####
   ################################
@@ -126,17 +127,17 @@ for(i in 18:33
     
     ## Sin
     print(c(l,"BXIIsin",1))
-    hidsin<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=Xsin,X_hat=Xsin_hat,h1=1),silent=T)
+    hidsin<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=Xsin,X_hat=Xsin_hat,h1=1,tau = tau),silent=T)
     hidsin_l[[l]]<-hidsin
     
     ## Cos
     print(c(l,"BXIIcos",2))
-    hidcos<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=Xcos,X_hat=Xcos_hat,h1=1),silent=T)
+    hidcos<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=Xcos,X_hat=Xcos_hat,h1=1,tau = tau),silent=T)
     hidcos_l[[l]]<-hidcos
     
     ## Sin&Cos
     print(c(l,"BXIIsincos",3))
-    hidsincos<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=X,X_hat=X_hat,h1=1),silent=T)
+    hidsincos<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=X,X_hat=X_hat,h1=1,tau = tau),silent=T)
     hidsincos_l[[l]]<-hidsincos
     
     ## Calculate model statistics
@@ -223,14 +224,25 @@ for(i in 18:33
   Top_BXII<-Top_BXII[order(Top_BXII$AIC),]
   
   ## Select the best model
-  if(sum(na.omit(Top_BXII$model_sig==1))==0){
-    Select_BXII<-Top_BXII %>%
-      filter(pvalue_LB>0.05) %>%
-      filter(RMSE==min(RMSE))
-  }else{
-    Select_BXII<-Top_BXII %>%
-      filter(pvalue_LB>0.05,model_sig==1) %>%
-      filter(RMSE==min(RMSE))
+  # 1. Selecionar os 10 melhores modelos pelo menor AIC
+  Top_BXII <- Top_BXII %>%
+    arrange(AIC) %>%
+    slice_head(n = 10)
+
+  # 2. Selecionar modelos com resíduos adequados e modelo significativo
+  Select_BXII <- Top_BXII %>%
+    filter(pvalue_LB > 0.05, model_sig == 1)
+
+  # 3. Se houver modelos que atendam aos critérios,
+  # selecionar aquele com menor RMSE
+  if (nrow(Select_BXII) > 0) {
+    Select_BXII <- Select_BXII %>%
+      filter(RMSE == min(RMSE, na.rm = TRUE))
+  } else {
+    # 4. Se nenhum modelo atender aos critérios,
+    # selecionar o modelo com o menor AIC
+    Select_BXII <- Top_BXII %>%
+      filter(AIC == min(AIC, na.rm = TRUE))
   }
   
   
@@ -248,7 +260,7 @@ for(i in 18:33
   }
   
   ##########################
-  #### fitting Ray-GAS ####
+  #### fitting Ray-GAS  ####
   ##########################
   
   hidRaysin_l<-hidRaycos_l<-hidRaysincos_l<-list()
@@ -360,14 +372,25 @@ for(i in 18:33
   Top_Ray<-Top_Ray[order(Top_Ray$AIC),]
   
   ## Select the best model
-  if(sum(na.omit(Top_Ray$model_sig==1))==0){
-    Select_Ray<-Top_Ray %>%
-      filter(pvalue_LB>0.05) %>%
-      filter(RMSE==min(RMSE))
-  }else{
-    Select_Ray<-Top_Ray %>%
-      filter(pvalue_LB>0.05,model_sig==1) %>%
-      filter(RMSE==min(RMSE))
+  # 1. Selecionar os 10 melhores modelos pelo menor AIC
+  Top_Ray <- Top_Ray %>%
+    arrange(AIC) %>%
+    slice_head(n = 10)
+
+  # 2. Selecionar modelos com resíduos adequados e modelo significativo
+  Select_Ray <- Top_Ray %>%
+    filter(pvalue_LB > 0.05, model_sig == 1)
+
+  # 3. Se houver modelos que atendam aos critérios,
+  # selecionar aquele com menor RMSE
+  if (nrow(Select_Ray) > 0) {
+    Select_Ray <- Select_Ray %>%
+      filter(RMSE == min(RMSE, na.rm = TRUE))
+  } else {
+    # 4. Se nenhum modelo atender aos critérios,
+    # selecionar o modelo com o menor AIC
+    Select_Ray <- Top_Ray %>%
+      filter(AIC == min(AIC, na.rm = TRUE))
   }
   
   if(nrow(Select_Ray)>0){
@@ -399,70 +422,28 @@ for(i in 18:33
     
     ## Sin
     print(c(l,"gammasin",1))
-    hidsin<-try(gas(as.numeric(y),
-                    x=Xsin,
-                    p=as.integer(pq[1]),
-                    q=as.integer(pq[2]),
-                    optim_arguments = list(
-                      opts = list(
-                        algorithm = "NLOPT_LN_NELDERMEAD",
-                        maxeval = 2000,
-                        xtol_rel = 1e-4
-                      )
-                    ),
-                    distr = "gamma",
-                    param = "scale",
-                    par_static = c(FALSE, TRUE),
-                    scaling = "fisher_inv"),silent=T)
-    hidgammasin_l[[l]]<-hidsin$fit
+    hidsin<-try(GGAS.fit(y,pq[1],pq[2],X=Xsin,X_hat=Xsin_hat,h1=1),silent=T)
+    hidgammasin_l[[l]]<-hidsin
     
     ## Cos
     print(c(l,"gammacos",2))
-    hidcos<-try(gas(as.numeric(y),
-                    x=Xcos,
-                    p=as.integer(pq[1]),
-                    q=as.integer(pq[2]),
-                    optim_arguments = list(
-                      opts = list(
-                        algorithm = "NLOPT_LN_NELDERMEAD",
-                        maxeval = 2000,
-                        xtol_rel = 1e-4
-                      )
-                    ),
-                    distr = "gamma",
-                    param = "scale",
-                    par_static = c(FALSE, TRUE),
-                    scaling = "fisher_inv"),silent=T)
-    hidgammacos_l[[l]]<-hidcos$fit
+    hidcos<-try(GGAS.fit(y,pq[1],pq[2],X=Xcos,X_hat=Xcos_hat,h1=1),silent=T)
+    hidgammacos_l[[l]]<-hidcos
     
     ## Sin&Cos
     print(c(l,"gammasincos",3))
-    hidsincos<-try(gas(as.numeric(y),
-                       x=X,
-                       p=as.integer(pq[1]),
-                       q=as.integer(pq[2]),
-                       optim_arguments = list(
-                         opts = list(
-                           algorithm = "NLOPT_LN_NELDERMEAD",
-                           maxeval = 2000,
-                           xtol_rel = 1e-4
-                         )
-                       ),
-                       distr = "gamma",
-                       param = "scale",
-                       par_static = c(FALSE, TRUE),
-                       scaling = "fisher_inv"),silent=T)
-    hidgammasincos_l[[l]]<-hidsincos$fit
+    hidsincos<-try(GGAS.fit(y,pq[1],pq[2],X=X,X_hat=X_hat,h1=1),silent=T)
+    hidgammasincos_l[[l]]<-hidsincos
     
     ## Calculate model statistics
     for(tipo in c("sin","cos","sincos")){
       
       if(tipo=="sin"){
-        fit<-hidsin$fit
+        fit<-hidsin
       }else if(tipo=="cos"){
-        fit<-hidcos$fit
+        fit<-hidcos
       }else{
-        fit<-hidsincos$fit
+        fit<-hidsincos
       }
       
       if(inherits(fit,"try-error")){
@@ -473,12 +454,12 @@ for(i in 18:33
         RMSE<-MAE<-MAPE<-NA
       }else{
         aic<-round(fit$aic,4)
-        pv<-round(Box.test(fit$resid_tv,lag=20,type="Ljung")$p.value,4)
-        int_sig<-as.numeric(fit$coef_pval[1]<pvalor)
-        model_sig<-as.numeric(all(fit$coef_pval[2:length(fit$coef_pval)]<pvalor))
-        RMSE<-accuracy(y,fit$mean_tv)[,2]
-        MAE<-accuracy(y,fit$mean_tv)[,3]
-        MAPE<-accuracy(y,fit$mean_tv)[,5]
+        pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
+        int_sig<-as.numeric(fit$model[1,4]<pvalor)
+        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<pvalor))
+        RMSE<-accuracy(y,fit$fitted)[,2]
+        MAE<-accuracy(y,fit$fitted)[,3]
+        MAPE<-accuracy(y,fit$fitted)[,5]
       }
       
       if(tipo=="sin"){
@@ -539,14 +520,25 @@ for(i in 18:33
   
   ## Select the best model
   
-  if(sum(na.omit(Top_gamma$model_sig==1))==0){
-    Select_gamma<-Top_gamma %>%
-      filter(pvalue_LB>0.05) %>%
-      filter(RMSE==min(RMSE))
-  }else{
-    Select_gamma<-Top_gamma %>%
-      filter(pvalue_LB>0.05,model_sig==1) %>%
-      filter(RMSE==min(RMSE))
+  # 1. Selecionar os 10 melhores modelos pelo menor AIC
+  Top_gamma <- Top_gamma %>%
+    arrange(AIC) %>%
+    slice_head(n = 10)
+
+  # 2. Selecionar modelos com resíduos adequados e modelo significativo
+  Select_gamma <- Top_gamma %>%
+    filter(pvalue_LB > 0.05, model_sig == 1)
+
+  # 3. Se houver modelos que atendam aos critérios,
+  # selecionar aquele com menor RMSE
+  if (nrow(Select_gamma) > 0) {
+    Select_gamma <- Select_gamma %>%
+      filter(RMSE == min(RMSE, na.rm = TRUE))
+  } else {
+    # 4. Se nenhum modelo atender aos critérios,
+    # selecionar o modelo com o menor AIC
+    Select_gamma <- Top_gamma %>%
+      filter(AIC == min(AIC, na.rm = TRUE))
   }
   
   
@@ -676,17 +668,27 @@ for(i in 18:33
   Top_BXIIARMA<-Top_BXIIARMA[order(Top_BXIIARMA$AIC),]
   
   ## Select the best model
-  
-  
-  if(sum(na.omit(Top_BXIIARMA$model_sig==1))==0){
-    Select_BXIIARMA<-Top_BXIIARMA %>%
-      filter(pvalue_LB>0.05) %>%
-      filter(RMSE==min(RMSE))
-    }else{
-      Select_BXIIARMA<-Top_BXIIARMA %>%
-      filter(pvalue_LB>0.05,model_sig==1) %>%
-      filter(RMSE==min(RMSE))
-      }
+    
+  # 1. Selecionar os 10 melhores modelos pelo menor AIC
+  Top_BXIIARMA <- Top_BXIIARMA %>%
+    arrange(AIC) %>%
+    slice_head(n = 10)
+
+  # 2. Selecionar modelos com resíduos adequados e modelo significativo
+  Select_BXIIARMA <- Top_BXIIARMA %>%
+    filter(pvalue_LB > 0.05, model_sig == 1)
+
+  # 3. Se houver modelos que atendam aos critérios,
+  # selecionar aquele com menor RMSE
+  if (nrow(Select_BXIIARMA) > 0) {
+    Select_BXIIARMA <- Select_BXIIARMA %>%
+      filter(RMSE == min(RMSE, na.rm = TRUE))
+  } else {
+    # 4. Se nenhum modelo atender aos critérios,
+    # selecionar o modelo com o menor AIC
+    Select_BXIIARMA <- Top_BXIIARMA %>%
+      filter(AIC == min(AIC, na.rm = TRUE))
+  }
   
   if(nrow(Select_BXIIARMA)>0){
     if(Select_BXIIARMA$Type[1]=="Sin"){
@@ -852,16 +854,28 @@ for(i in 18:33
   )
   
   Top_SARMA<-Top_SARMA[order(Top_SARMA$AIC),]
-  
+
   ## Select the best model
-  if(sum(na.omit(Top_SARMA$model_sig==1))==0){
-    Select_SARMA<-Top_SARMA %>%
-      filter(pvalue_LB>0.05) %>%
-      filter(RMSE==min(RMSE))
-  }else{
-    Select_SARMA<-Top_SARMA %>%
-      filter(pvalue_LB>0.05,model_sig==1) %>%
-      filter(RMSE==min(RMSE))
+    
+  # 1. Selecionar os 10 melhores modelos pelo menor AIC
+  Top_SARMA <- Top_SARMA %>%
+    arrange(AIC) %>%
+    slice_head(n = 10)
+
+  # 2. Selecionar modelos com resíduos adequados e modelo significativo
+  Select_SARMA <- Top_SARMA %>%
+    filter(pvalue_LB > 0.05, model_sig == 1)
+
+  # 3. Se houver modelos que atendam aos critérios,
+  # selecionar aquele com menor RMSE
+  if (nrow(Select_SARMA) > 0) {
+    Select_SARMA <- Select_SARMA %>%
+      filter(RMSE == min(RMSE, na.rm = TRUE))
+  } else {
+    # 4. Se nenhum modelo atender aos critérios,
+    # selecionar o modelo com o menor AIC
+    Select_SARMA <- Top_SARMA %>%
+      filter(AIC == min(AIC, na.rm = TRUE))
   }
   
   if(nrow(Select_SARMA)>0){
@@ -870,6 +884,256 @@ for(i in 18:33
       final_SARMA1<-NULL
       warning("No SARMA model passed the Ljung-Box criterion.")
       }
+
+  #########################
+  #### Fitting XGBoost ####
+  #########################
+
+  # 1. Construct temporal covariates
+  n <- length(y)
+  Index <- seq_len(n)
+
+  X_XGBoost <- data.frame(
+    Index = Index,
+
+    # Lags
+    lag1  = c(NA, y[-n]),
+    lag2  = c(NA, NA, y[seq_len(n - 2)]),
+    lag3 = c(rep(NA, 3), y[seq_len(n - 3)]),
+
+    # Moving averages, using only past observations
+    MA2 = c(
+      rep(NA, 2),
+      vapply(3:n, function(t)
+        mean(y[(t - 2):(t - 1)]), numeric(1))
+    ),
+
+    MA3 = c(
+      rep(NA, 3),
+      vapply(4:n, function(t)
+        mean(y[(t - 3):(t - 1)]), numeric(1))
+    ),
+
+    # Annual seasonality
+    Xsin = Xsin,
+    Xcos = Xcos
+  )
+
+  dados_XGBoost <- data.frame(
+    y = as.numeric(y),
+    X_XGBoost
+  )
+
+  # Keep the original time index for each observation
+  dados_XGBoost$Index_original <- dados_XGBoost$Index
+
+  dados_XGBoost <- na.omit(dados_XGBoost)
+
+  y_XGBoost <- dados_XGBoost$y
+
+  X_XGBoost <- as.matrix(
+    dados_XGBoost[, c(
+      "Index", "lag1", "lag2", "lag3",
+      "MA2", "MA3", "Xsin", "Xcos"
+    )]
+  )
+
+  ############################
+  #### Candidate models ####
+  ############################
+
+  # Hyperparameter combinations
+  mat_XGBoost <- expand.grid(
+    max_depth = c(2, 4, 6),
+    eta = c(0.01, 0.05, 0.10),
+    nrounds = c(100, 300)
+  )
+
+  hids_XGBoost_l <- list()
+
+  RMSE_XGBoost <- rep(NA_real_, nrow(mat_XGBoost))
+  MAE_XGBoost  <- rep(NA_real_, nrow(mat_XGBoost))
+  MAPE_XGBoost <- rep(NA_real_, nrow(mat_XGBoost))
+  pv_LB_XGBoost <- rep(NA_real_, nrow(mat_XGBoost))
+
+  # Expanding-window validation
+  n_obs <- length(y_XGBoost)
+  initial <- floor(0.60 * n_obs)
+  n_folds <- 5
+
+  if (initial < 20 || n_obs - initial < n_folds) {
+    stop("Not enough observations for the specified temporal validation.")
+  }
+
+  folds <- split(
+    seq.int(initial + 1, n_obs),
+    cut(
+      seq.int(initial + 1, n_obs),
+      breaks = n_folds,
+      labels = FALSE
+    )
+  )
+
+  for (l in seq_len(nrow(mat_XGBoost))) {
+
+    pq1 <- mat_XGBoost[l, ]
+
+    print(c(l, "XGBoost"))
+
+    pred_cv <- rep(NA_real_, n_obs)
+
+    # Rolling-origin cross-validation
+    for (j in seq_along(folds)) {
+
+      id_valid <- folds[[j]]
+      id_train <- seq_len(min(id_valid) - 1)
+
+      fit <- try(
+        xgboost(
+          data = X_XGBoost[id_train, , drop = FALSE],
+          label = y_XGBoost[id_train],
+          objective = "reg:squarederror",
+          max_depth = pq1$max_depth,
+          eta = pq1$eta,
+          nrounds = pq1$nrounds,
+          subsample = 0.8,
+          colsample_bytree = 0.8,
+          nthread = 2,
+          verbosity = 0
+        ),
+        silent = TRUE
+      )
+
+      if (!inherits(fit, "try-error")) {
+        pred_cv[id_valid] <- predict(
+          fit,
+          X_XGBoost[id_valid, , drop = FALSE]
+        )
+      }
+    }
+
+    # Calculate statistics from out-of-fold predictions
+    valid <- which(!is.na(pred_cv))
+
+    if (length(valid) > 0) {
+
+      res <- y_XGBoost[valid] - pred_cv[valid]
+
+      RMSE_XGBoost[l] <- sqrt(mean(res^2))
+      MAE_XGBoost[l] <- mean(abs(res))
+
+      if (all(y_XGBoost[valid] != 0)) {
+        MAPE_XGBoost[l] <- mean(
+          abs(res / y_XGBoost[valid])
+        ) * 100
+      }
+
+      if (length(res) > 20) {
+        pv_LB_XGBoost[l] <- Box.test(
+          res,
+          lag = 20,
+          type = "Ljung-Box"
+        )$p.value
+      }
+    }
+
+    # Fit candidate using the complete modelling sample
+    hids_XGBoost_l[[l]] <- try(
+      xgboost(
+        data = X_XGBoost,
+        label = y_XGBoost,
+        objective = "reg:squarederror",
+        max_depth = pq1$max_depth,
+        eta = pq1$eta,
+        nrounds = pq1$nrounds,
+        subsample = 0.8,
+        colsample_bytree = 0.8,
+        nthread = 2,
+        verbosity = 0
+      ),
+      silent = TRUE
+    )
+  }
+
+  ############################
+  #### Results table ####
+  ############################
+
+  Top_XGBoost <- data.frame(
+    Index = seq_len(nrow(mat_XGBoost)),
+    max_depth = mat_XGBoost$max_depth,
+    eta = mat_XGBoost$eta,
+    nrounds = mat_XGBoost$nrounds,
+    pvalue_LB = pv_LB_XGBoost,
+    RMSE = RMSE_XGBoost,
+    MAPE = MAPE_XGBoost,
+    MAE = MAE_XGBoost
+  )
+
+  # Keep models that fitted successfully and have a valid RMSE
+  valid_models <- vapply(
+    hids_XGBoost_l,
+    function(fit) !inherits(fit, "try-error"),
+    logical(1)
+  )
+
+  Top_XGBoost <- Top_XGBoost %>%
+    filter(valid_models, is.finite(RMSE)) %>%
+    arrange(RMSE) %>%
+    slice_head(n = 10)
+
+  ############################
+  #### Select best model ####
+  ############################
+
+  # Prefer models with uncorrelated forecast errors
+  Select_XGBoost <- Top_XGBoost %>%
+    filter(pvalue_LB > 0.05)
+
+  if (nrow(Select_XGBoost) > 0) {
+
+    Select_XGBoost <- Select_XGBoost %>%
+      filter(RMSE == min(RMSE, na.rm = TRUE))
+
+  } else {
+
+    # Fallback: lowest cross-validation RMSE
+    Select_XGBoost <- Top_XGBoost %>%
+      filter(RMSE == min(RMSE, na.rm = TRUE))
+  }
+
+  ############################
+  #### Recover selected model ####
+  ############################
+
+  if (nrow(Select_XGBoost) > 0) {
+
+    id_XGBoost <- Select_XGBoost$Index[1]
+
+    final_XGBoost1 <- hids_XGBoost_l[[id_XGBoost]]
+
+    modelo_XGBoost1 <- "XGBoost"
+  }
+
+  ############################
+  #### Covariate importance ####
+  ############################
+
+  if (exists("final_XGBoost")) {
+
+    imp_XGBoost <- xgb.importance(
+      model = final_XGBoost1
+    )
+
+    print(imp_XGBoost)
+
+    xgb.plot.importance(
+      importance_matrix = imp_XGBoost,
+      measure = "Gain",
+      top_n = 15
+    )
+  }
+
   
   
   ###########################
@@ -879,7 +1143,7 @@ for(i in 18:33
   pv_LB_BXII1<-Box.test(final1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_Ray1<-Box.test(final_Ray1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_GAMMA1 <- try(
-    Box.test(final_GAMMA1$resid_tv, lag = 20, type = "Ljung")$p.value,
+    Box.test(final_GAMMA1$residuals, lag = 20, type = "Ljung")$p.value,
     silent = TRUE
   )
   
@@ -889,7 +1153,15 @@ for(i in 18:33
   pv_LB_BXIIARMA1<-Box.test(finalBXIIARMA1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_ETS1<-Box.test(final_ETS1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_SARMA1<-Box.test(final_SARMA1$residuals, lag = 20, type = "Ljung")$p.value
-  
+  # Predicted values
+  pred_XGBoost1 <- predict(
+    final_XGBoost1,
+    X_XGBoost
+  )
+  # Residuals
+  res_XGBoost1 <- y_XGBoost - pred_XGBoost1
+  pv_LB_XGBoost1<-Box.test(res_XGBoost1, lag = 20, type = "Ljung")$p.value
+
   
   #############################
   #### selecting resevoirs ####  
@@ -902,35 +1174,39 @@ for(i in 18:33
     finalBXIIARMA[[j]]<-finalBXIIARMA1
     final_ETS[[j]]<-final_ETS1
     final_SARMA[[j]]<-final_SARMA1
+    final_XGBoost[[j]]<-final_XGBoost1
     modelo[j]<-modelo1
     modelo_Ray[j]<-modelo_Ray1
     modelo_GAMMA[j]<-modelo_GAMMA1
     modeloBXIIARMA[j]<-modeloBXIIARMA1
     modelo_ETS[j]<-modelo_ETS1
+    modelo_XGBoost[j]<-modelo_XGBoost1
     nome[j]<-substring(colnames(dados)[i],1,nchar(colnames(dados)[i])#-10
                        )
     print(nome[j])
-    pv_LB_BXII[j]<-Box.test(final1$residuals, lag = 20, type = "Ljung")$p.value
-    pv_LB_Ray[j]<-Box.test(final_Ray1$residuals, lag = 20, type = "Ljung")$p.value
+    pv_LB_BXII[j]<- pv_LB_BXII1
+    pv_LB_Ray[j]<- pv_LB_Ray1
     pv_LB_GAMMA[j] <- try(
-      Box.test(final_GAMMA1$resid_tv, lag = 20, type = "Ljung")$p.value,
+      pv_LB_GAMMA1,
       silent = TRUE
     )
     
     if (inherits(pv_LB_GAMMA[j], "try-error")) {
       pv_LB_GAMMA[j] <- NA
     }
-    pv_LB_BXIIARMA[j]<-Box.test(finalBXIIARMA1$residuals, lag = 20, type = "Ljung")$p.value
-    pv_LB_ETS[j]<-Box.test(final_ETS1$residuals, lag = 20, type = "Ljung")$p.value
-    pv_LB_SARMA[j]<-Box.test(final_SARMA1$residuals, lag = 20, type = "Ljung")$p.value
+    pv_LB_BXIIARMA[j]<-pv_LB_BXIIARMA1
+    pv_LB_ETS[j]<-pv_LB_ETS1
+    pv_LB_SARMA[j]<-pv_LB_SARMA1
+    pv_LB_XGBoost[j]<-pv_LB_XGBoost1
+
 
     acuracia1[1,j,]<-c(accuracy(final[[j]]$fitted, y)[,c(2,3,5)],final[[j]]$aic,final[[j]]$bic)
     acuracia1[2,j,]<-c(accuracy(final_Ray[[j]]$fitted, y)[,c(2,3,5)],final_Ray[[j]]$aic,final_Ray[[j]]$bic)
     if (!is.null(final_GAMMA[[j]]) &&
-        !is.null(final_GAMMA[[j]]$mean_tv)) {
+        !is.null(final_GAMMA[[j]]$fitted)) {
       
       acuracia1[3, j, ] <- c(
-        accuracy(final_GAMMA[[j]]$mean_tv, y)[, c(2,3,5)],
+        accuracy(final_GAMMA[[j]]$fitted, y)[, c(2,3,5)],
         final_GAMMA[[j]]$aic,
         final_GAMMA[[j]]$bic
       )
@@ -943,7 +1219,10 @@ for(i in 18:33
     acuracia1[4,j,]<-c(accuracy(finalBXIIARMA[[j]]$fitted, y)[,c(2,3,5)],finalBXIIARMA[[j]]$aic,finalBXIIARMA[[j]]$bic)
     acuracia1[5,j,]<-c(accuracy(final_ETS[[j]]$fitted, y)[,c(2,3,5)],final_ETS[[j]]$aic,final_ETS[[j]]$bic)
     acuracia1[6,j,]<-c(accuracy(final_SARMA[[j]]$fitted, y)[,c(2,3,5)],final_SARMA[[j]]$aic,final_SARMA[[j]]$bic)
-    
+    res_XGBoost[[j]]<-res_XGBoost1
+    pred_XGBoost[[j]]<-pred_XGBoost1
+    acuracia1[7,j,]<-c(accuracy(pred_XGBoost[[j]], y_XGBoost)[,c(2,3,5)],NA,NA)
+
     
     ###############
     #### plots ####  
@@ -974,21 +1253,23 @@ for(i in 18:33
     plot(y,main=nome[j],ylim=c(min(y),max(y)+0.15))
     # plot(y,main="")
     lines(final_Ray[[j]]$fitted, col=5,lty=3,lwd=1.7)
-    lines(ts(final_GAMMA[[j]]$mean_tv,end = c(2023, 8),frequency = 12), col=8,lty=3.5,lwd=1.5)
+    # lines(ts(final_GAMMA[[j]]$fitted,end = c(2023, 8),frequency = 12), col=8,lty=3.5,lwd=1.5)
     lines(finalBXIIARMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
     lines(final_SARMA[[j]]$fitted, col=7,lty=5,lwd=1.8)
+    lines(ts(pred_XGBoost[[j]],end = c(2023, 8),frequency = 12), col=4,lty=7,lwd=1.4)
     lines(final_ETS[[j]]$fitted, col=3,lty=6,lwd=1.9)
     lines(final[[j]]$fitted, col=2,lty=2,lwd=2)
     legend("topleft", 
-           c("Original","BXII-GAS","Ray-GAS","gamma-GAS","BXII-ARMA","SARMA",
-             "ETS" 
+           c("Original","BXII-GAS","Ray-GAS",# "gamma-GAS",
+           "BXII-ARMA","SARMA",
+             "ETS","XGBoost" 
              ),
-           col = c(1,2,5,8,6,7,
-                   3),
-           lty= c(1,2,3,3.5,4,5,
-                  6),
-           lwd = c(1,2,1.7,1.5,1.6,1.8,
-                   1.9), bty="n", cex = 1)
+           col = c(1,2,5,# 8,
+            6,7,3,4),
+           lty= c(1,2,3,# 3.5,
+            4,5,6,7),
+           lwd = c(1,2,1.7,# 1.5,
+            1.6,1.8,1.9,1.4), bty="n", cex = 1)
     dev.off()
     # ---------------------------------
     # seasonality
@@ -1015,12 +1296,11 @@ for(i in 18:33
     # ---------------------------------
     resid_plot <- paste0("Plots/resid_plotgamma", i, ".pdf")
     if (!is.null(final_GAMMA[[j]]) &&
-        !is.null(final_GAMMA[[j]]$resid_tv) &&
-        length(final_GAMMA[[j]]$resid_tv) > 0) {
+        !is.null(final_GAMMA[[j]]$residuals) &&
+        length(final_GAMMA[[j]]$residuals) > 0) {
       pdf(resid_plot, width = 4, height = 4)
-      acf(final_GAMMA[[j]]$resid_tv, main = "")
+      acf(final_GAMMA[[j]]$residuals, main = "")
       dev.off()
-      
     }
     
     # ---------------------------------
@@ -1043,6 +1323,13 @@ for(i in 18:33
     # acf SARMA residuals 
     acf(final_SARMA[[j]]$residuals,main="")
     dev.off()
+  
+    # ---------------------------------
+    resid_plot<-paste0("Plots/resid_plotXGBoost",i,".pdf")
+    pdf(resid_plot,width = 4, height = 4)
+    # acf SARMA residuals 
+    acf(ts(res_XGBoost[[j]],end = c(2023, 8),frequency = 12),main="")
+    dev.off()
 }
 
 ########################
@@ -1056,36 +1343,42 @@ results<-data.frame(
   AIC_BXIIARMA=acuracia1[4,,4],
   AIC_ETS=acuracia1[5,,4],
   AIC_SARMA=acuracia1[6,,4],
+  AIC_XGBoost=c(rep(NA,33)),
   BIC_BXII=acuracia1[1,,5],
   BIC_Ray=acuracia1[2,,5],
   BIC_GAMMA=acuracia1[3,,5],
   BIC_BXIIARMA=acuracia1[4,,5], 
   BIC_ETS=acuracia1[5,,5], 
   BIC_SARMA=acuracia1[6,,5], 
+  BIC_XGBoost=c(rep(NA,33)),
   MAE_BXII=acuracia1[1,,2],
   MAE_Ray=acuracia1[2,,2],
   MAE_GAMMA=acuracia1[3,,2],
   MAE_BXIIARMA=acuracia1[4,,2],
   MAE_ETS=acuracia1[5,,2],
   MAE_SARMA=acuracia1[6,,2],
+  MAE_XGBoost=acuracia1[7,,2],
   MAPE_BXII=acuracia1[1,,3],
   MAPE_Ray=acuracia1[2,,3],
   MAPE_GAMMA=acuracia1[3,,3],
   MAPE_BXIIARMA=acuracia1[4,,3],
   MAPE_ETS=acuracia1[5,,3],
   MAPE_SARMA=acuracia1[6,,3],
+  MAPE_XGBoost=acuracia1[7,,3],
   RMSE_BXII=acuracia1[1,,1],
   RMSE_Ray=acuracia1[2,,1],
   RMSE_GAMMA=acuracia1[3,,1],
   RMSE_BXIIARMA=acuracia1[4,,1],
   RMSE_ETS=acuracia1[5,,1],
   RMSE_SARMA=acuracia1[6,,1],
+  RMSE_XGBoost=acuracia1[7,,1],
   pv_LB_BXII=round(pv_LB_BXII,4),
   pv_LB_Ray=round(pv_LB_Ray,4),
   pv_LB_GAMMA=round(pv_LB_GAMMA,4),
   pv_LB_BXIIARMA=round(pv_LB_BXIIARMA,4),
   pv_LB_ETS=round(pv_LB_ETS,4),
-  pv_LB_SARMA=round(pv_LB_SARMA,4)
+  pv_LB_SARMA=round(pv_LB_SARMA,4),
+  pv_LB_XGBoost=round(pv_LB_XGBoost,4)
   )
 rownames(results)<-nome
 

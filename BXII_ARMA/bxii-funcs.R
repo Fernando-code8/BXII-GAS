@@ -16,7 +16,7 @@
 ################################################################################
 
 # density function
-dbxii<-function(y,mu,c,tau=.5)
+dbxii<-function(y,mu,c,tau=.25)
 {
   s=1
   d<-log(1/(1-tau))*(c*y^(c-1))/(s^(c)*log(1+(mu/s)^c))*
@@ -25,7 +25,7 @@ dbxii<-function(y,mu,c,tau=.5)
 }
 
 # cumulative distribution function
-pbxii<-function(y,mu,c,tau=.5)
+pbxii<-function(y,mu,c,tau=.25)
 {
   s=1
   p<- 1-(1+(y/s)^c)^(log(1-tau)/(log(1+(mu/s)^c)))
@@ -33,7 +33,7 @@ pbxii<-function(y,mu,c,tau=.5)
 }
 
 # quantile function
-qbxii<-function(u,mu,c,tau=.5)
+qbxii<-function(u,mu,c,tau=.25)
 {
   s=1
   q<- s*((1-u)^(log(1+(mu/s)^c)/log(1-tau))-1)^(1/c)
@@ -41,7 +41,7 @@ qbxii<-function(u,mu,c,tau=.5)
 }
 
 # inversion method for randon generation
-rbxii<-function(n,mu,c,tau=.5)
+rbxii<-function(n,mu,c,tau=.25)
 {
   s=1
   u<- runif(n)
