@@ -87,7 +87,7 @@ res_XGBoost<-pred_XGBoost<-list()
 start_time <- Sys.time()
 j<-0
 pvalor<-0.10
-tau<-0.25
+tau<-0.5
 setwd(file.path(path, "Apply BXII-GAS"))
 for(i in R){
   ################################

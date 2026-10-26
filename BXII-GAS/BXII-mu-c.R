@@ -2,7 +2,7 @@
 # Created by Fernando J M de Araújo (nandomonteiro418@gmail.com), March/2024
 
 # density function
-dBXII<-function(y,mu,c,tau=0.25)
+dBXII<-function(y,mu,c,tau=0.05)
 {
   s=1
   d<-log(1/(1-tau))*(c*y^(c-1))/(s^(c)*log(1+(mu/s)^c))*
@@ -11,7 +11,7 @@ dBXII<-function(y,mu,c,tau=0.25)
 }
 
 # cumulative distribution function
-pBXII<-function(y,mu,c,tau=0.25)
+pBXII<-function(y,mu,c,tau=0.05)
 {
   s=1
   p<- 1-(1+(y/s)^c)^(log(1-tau)/(log(1+(mu/s)^c)))
@@ -19,7 +19,7 @@ pBXII<-function(y,mu,c,tau=0.25)
 }
 
 # quantile function
-qBXII<-function(u,mu,c,tau=0.25)
+qBXII<-function(u,mu,c,tau=0.05)
 {
   s=1
   q<- s*((1-u)^(log(1+(mu/s)^c)/log(1-tau))-1)^(1/c)
@@ -27,7 +27,7 @@ qBXII<-function(u,mu,c,tau=0.25)
 }
 
 # inversion method for randon generation
-rBXII<-function(n,mu,c,tau=0.25)
+rBXII<-function(n,mu,c,tau=0.05)
 {
   s=1
   u<- runif(n)
