@@ -983,9 +983,9 @@ for(i in R){
     pred_cv <- rep(NA_real_, n_obs)
 
     # Rolling-origin cross-validation
-    for (j in seq_along(folds)) {
+    for (k in seq_along(folds)) {
 
-      id_valid <- folds[[j]]
+      id_valid <- folds[[k]]
       id_train <- seq_len(min(id_valid) - 1)
 
       fit <- try(
@@ -1202,19 +1202,12 @@ for(i in R){
 
     acuracia1[1,j,]<-c(accuracy(final[[j]]$fitted, y)[,c(2,3,5)],final[[j]]$aic,final[[j]]$bic)
     acuracia1[2,j,]<-c(accuracy(final_Ray[[j]]$fitted, y)[,c(2,3,5)],final_Ray[[j]]$aic,final_Ray[[j]]$bic)
-    if (!is.null(final_GAMMA[[j]]) &&
-        !is.null(final_GAMMA[[j]]$fitted)) {
-      
-      acuracia1[3, j, ] <- c(
-        accuracy(final_GAMMA[[j]]$fitted, y)[, c(2,3,5)],
-        final_GAMMA[[j]]$aic,
-        final_GAMMA[[j]]$bic
-      )
-      
-    } else {
-      
+    if (inherits(final_GAMMA[[j]], "try-error")){
       acuracia1[3, j, ] <- NA
-      
+    }else{
+      acuracia1[3, j, ] <- c(accuracy(final_GAMMA[[j]]$fitted, y)[, c(2,3,5)],
+      final_GAMMA[[j]]$aic,
+      final_GAMMA[[j]]$bic)
     }
     acuracia1[4,j,]<-c(accuracy(finalBXIIARMA[[j]]$fitted, y)[,c(2,3,5)],finalBXIIARMA[[j]]$aic,finalBXIIARMA[[j]]$bic)
     acuracia1[5,j,]<-c(accuracy(final_ETS[[j]]$fitted, y)[,c(2,3,5)],final_ETS[[j]]$aic,final_ETS[[j]]$bic)
@@ -1280,11 +1273,13 @@ for(i in R){
     dev.off()
     
     # ---------------------------------
+    if(sum(final[[j]]$residuals)!=(-Inf)){
     resid_plot<-paste0("Plots/resid_plotBXII",i,".pdf")
     pdf(resid_plot,width = 4, height = 4)
     # acf BXII residuals 
     acf(final[[j]]$residuals,main="")
     dev.off()
+    }else{"BXII-GAS: It is not possible to create the chart."}
     
     # ---------------------------------
     resid_plot<-paste0("Plots/resid_plotRay",i,".pdf")
@@ -1294,21 +1289,23 @@ for(i in R){
     dev.off()
     
     # ---------------------------------
-    resid_plot <- paste0("Plots/resid_plotgamma", i, ".pdf")
-    if (!is.null(final_GAMMA[[j]]) &&
-        !is.null(final_GAMMA[[j]]$residuals) &&
-        length(final_GAMMA[[j]]$residuals) > 0) {
-      pdf(resid_plot, width = 4, height = 4)
+    
+    if (inherits(final_GAMMA[[j]], "try-error")) {
+      print("gamma-GAS: It is not possible to create the chart.")
+    }else{pdf(resid_plot, width = 4, height = 4)
+      resid_plot <- paste0("Plots/resid_plotgamma", i, ".pdf")
       acf(final_GAMMA[[j]]$residuals, main = "")
       dev.off()
     }
     
     # ---------------------------------
+    if(sum(finalBXIIARMA[[j]]$residuals)!=(-Inf)){
     resid_plot<-paste0("Plots/resid_plotBXIIARMA",i,".pdf")
     pdf(resid_plot,width = 4, height = 4)
     # acf BXIIARMA residuals 
     acf(finalBXIIARMA[[j]]$residuals,main="")
     dev.off()
+    }else{"BXII-ARMA: It is not possible to create the chart."}
     
     # ---------------------------------
     resid_plot<-paste0("Plots/resid_plotETS",i,".pdf")
@@ -1330,7 +1327,7 @@ for(i in R){
     # acf SARMA residuals 
     acf(ts(res_XGBoost[[j]],end = c(2023, 8),frequency = 12),main="")
     dev.off()
-}
+    }
 
 ########################
 #### final measures ####  
