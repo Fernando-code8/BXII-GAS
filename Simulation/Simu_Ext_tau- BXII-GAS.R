@@ -22,7 +22,7 @@ start_time <- Sys.time()
 vn<-c(
   100,200,300,500,1000
   )
-R<-1000
+R<-10
 bug<-0
 
 # w<-0.1;A=.2;B=.1;c=0.9;beta=c(0.1,0.5) 
@@ -37,8 +37,8 @@ w<-0.1;A=0.2;B=0.4;c=5;beta=c(-0.1
 theta=c(w,A,B,beta,
         c)
 # cov<-"sin&cos"
-cov<-"sin"
-# cov<-"cos"
+# cov<-"sin"
+cov<-"cos"
 # cov<-NA
 # X=NA
 # X_hat=NA
@@ -63,8 +63,9 @@ for(j in 1:length(vn)){
   i<-1
   #X<-cbind(sin(2*pi*t/12),cos(2*pi*t/12))
   #X_hat<-cbind(sin(2*pi*t_hat/12),cos(2*pi*t_hat/12))
-  X<-sin(2*pi*t/12) # in sample
-  X_hat<-sin(2*pi*t_hat/12) # out of sample
+  
+  X<-cos(2*pi*t/12) # in sample
+  X_hat<-cos(2*pi*t_hat/12) # out of sample
   #X=NA
   #X_hat=NA
   set.seed(10)
@@ -97,16 +98,17 @@ for(j in 1:length(vn)){
       }
       if (ICi[i,3,j]<= theta[3] && ICs[i,3,j]>=theta[3])
       {
+        
         cbeta1<-cbeta1+1
-      }
-      if (ICi[i,4,j]<= theta[4] && ICs[i,4,j]>=theta[4])
-      {
-         cdelta1<-cdelta1+1
       }
       #if (ICi[i,4,j]<= theta[4] && ICs[i,4,j]>=theta[4])
       #{
-      #  cdelta2<-cdelta2+1
+      #   cdelta1<-cdelta1+1
       #}
+      if (ICi[i,4,j]<= theta[4] && ICs[i,4,j]>=theta[4])
+      {
+        cdelta2<-cdelta2+1
+      }
       if (ICi[i,5,j]<= theta[5] && ICs[i,5,j]>=theta[5])
       {
         cc<-cc+1
@@ -117,8 +119,8 @@ for(j in 1:length(vn)){
   mean_MLEs[j,] <- apply(estim[,,j], 2, mean)
   RB[j,] <- (mean_MLEs[j,]-theta)/theta*100 
   RMSE[j,] <- sqrt(apply(estim[,,j],2,var)+(mean_MLEs[j,]-theta)^2)
-  TC[j,]<- c(comega,calpha1,cbeta1,cdelta1,
-    #cdelta2,
+  TC[j,]<- c(comega,calpha1,cbeta1,#cdelta1,
+    cdelta2,
     cc)/R
 
   }
