@@ -18,7 +18,7 @@ library(xgboost)
 
 # Main project folder
 if(Sys.info()["sysname"]=="Windows"){
-  path <- "C:/Users/Fernando/Documents/GitHub/BXII-GAS" # Windowns
+  path <- "C:/Users/nando/OneDrive - BTH/Fernando/BXII-GAS-1" # Windowns
 }else{
   path <- "~/Fernando/BXII-GAS" # Ubuntu
 }
@@ -73,6 +73,7 @@ R<-1:dim(dados)[2]
 
 mat<-matrix(c(rep(1,1*4)),ncol=4,byrow=T)
 mat<-matrix(c(rep(1,3),rep(2,3),rep(3,3),rep(1:3,3)),ncol=2,byrow=F)
+mat<-matrix(c(rep(1,2)),ncol=2,byrow=F)
 
 # IMPORTANT: Candidate grid for the gamma
 gamma_orders <- mat
@@ -97,13 +98,13 @@ for(i in R){
   s<-12
   h=12
   y <- zoo(y, order.by = datas)
-  y <- aggregate(y, as.yearmon, mean)
-  y<-y/1000
+  y <- aggregate(y, as.yearmon, sum)
+  y<-y/100000
   y<-ts(y[1:(length(y)-h)],frequency = s,start=c(2010,1))
   y[y==0] <- mean(y, na.rm = TRUE)
 
   t<-1:length(y)
-  t_hat<-length(y)+1
+  t_hat<-(length(y)+1):(length(y)+h)
   Xsin<-sin(2*pi*t/s)
   Xsin_hat<-sin(2*pi*t_hat/s)
   Xcos<-cos(2*pi*t/s)
@@ -127,17 +128,17 @@ for(i in R){
     
     ## Sin
     print(c(l,"BXIIsin",1))
-    hidsin<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=Xsin,X_hat=Xsin_hat,h1=1,tau = tau),silent=T)
+    hidsin<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=Xsin,X_hat=Xsin_hat,h1=12,tau = tau),silent=T)
     hidsin_l[[l]]<-hidsin
     
     ## Cos
     print(c(l,"BXIIcos",2))
-    hidcos<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=Xcos,X_hat=Xcos_hat,h1=1,tau = tau),silent=T)
+    hidcos<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=Xcos,X_hat=Xcos_hat,h1=12,tau = tau),silent=T)
     hidcos_l[[l]]<-hidcos
     
     ## Sin&Cos
     print(c(l,"BXIIsincos",3))
-    hidsincos<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=X,X_hat=X_hat,h1=1,tau = tau),silent=T)
+    hidsincos<-try(BXIIGAS.fit(y,1:pq[1],1:pq[2],X=X,X_hat=X_hat,h1=12,tau = tau),silent=T)
     hidsincos_l[[l]]<-hidsincos
     
     ## Calculate model statistics
@@ -258,6 +259,21 @@ for(i in R){
       modelo1<-"BXII SinCos"
     }
   }
+
+  ### teste plot ############################################################################################
+
+    #---------------------------------
+    # time series plot - fitted models
+    par(mfrow=c(1,1))
+    plot(y,main=nome[j],ylim=c(min(y),max(y)+0.15))
+    lines(final1$fitted, col=2,lty=2,lwd=2)
+    legend("topleft", 
+           c("Original","BXII-GAS"
+             ),
+           col = c(1,2),
+           lty= c(1,2),
+           lwd = c(1,2), bty="n", cex = 1)  
+  ###  End texte #############################################################################################
   
   ##########################
   #### fitting Ray-GAS  ####
@@ -275,17 +291,17 @@ for(i in R){
     
     ## Sin
     print(c(l,"Raysin",1))
-    hidsin<-try(RayGAS.fit(y,1:pq[1],1:pq[2],X=Xsin,X_hat=Xsin_hat,h1=1),silent=T)
+    hidsin<-try(RayGAS.fit(y,1:pq[1],1:pq[2],X=Xsin,X_hat=Xsin_hat,h1=12),silent=T)
     hidRaysin_l[[l]]<-hidsin
     
     ## Cos
     print(c(l,"Raycos",2))
-    hidcos<-try(RayGAS.fit(y,1:pq[1],1:pq[2],X=Xcos,X_hat=Xcos_hat,h1=1),silent=T)
+    hidcos<-try(RayGAS.fit(y,1:pq[1],1:pq[2],X=Xcos,X_hat=Xcos_hat,h1=12),silent=T)
     hidRaycos_l[[l]]<-hidcos
     
     ## Sin&Cos
     print(c(l,"Raysincos",3))
-    hidsincos<-try(RayGAS.fit(y,1:pq[1],1:pq[2],X=X,X_hat=X_hat,h1=1),silent=T)
+    hidsincos<-try(RayGAS.fit(y,1:pq[1],1:pq[2],X=X,X_hat=X_hat,h1=12),silent=T)
     hidRaysincos_l[[l]]<-hidsincos
     
     ## Calculate model statistics
@@ -422,17 +438,17 @@ for(i in R){
     
     ## Sin
     print(c(l,"gammasin",1))
-    hidsin<-try(GGAS.fit(y,pq[1],pq[2],X=Xsin,X_hat=Xsin_hat,h1=1),silent=T)
+    hidsin<-try(GGAS.fit(y,pq[1],pq[2],X=Xsin,X_hat=Xsin_hat,h1=12),silent=T)
     hidgammasin_l[[l]]<-hidsin
     
     ## Cos
     print(c(l,"gammacos",2))
-    hidcos<-try(GGAS.fit(y,pq[1],pq[2],X=Xcos,X_hat=Xcos_hat,h1=1),silent=T)
+    hidcos<-try(GGAS.fit(y,pq[1],pq[2],X=Xcos,X_hat=Xcos_hat,h1=12),silent=T)
     hidgammacos_l[[l]]<-hidcos
     
     ## Sin&Cos
     print(c(l,"gammasincos",3))
-    hidsincos<-try(GGAS.fit(y,pq[1],pq[2],X=X,X_hat=X_hat,h1=1),silent=T)
+    hidsincos<-try(GGAS.fit(y,pq[1],pq[2],X=X,X_hat=X_hat,h1=12),silent=T)
     hidgammasincos_l[[l]]<-hidsincos
     
     ## Calculate model statistics
@@ -571,17 +587,17 @@ for(i in R){
     
     ## Sin
     print(c(l,"BXIIARMAsin",1))
-    hidsin<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(Xsin),X_hat=as.matrix(Xsin_hat),h=1,diag=0,tau=tau),silent=T)
+    hidsin<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(Xsin),X_hat=as.matrix(Xsin_hat),h=12,diag=0,tau=tau),silent=T)
     hidBXIIARMAsin_l[[l]]<-hidsin
     
     ## Cos
     print(c(l,"BXIIARMAcos",2))
-    hidcos<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(Xcos),X_hat=as.matrix(Xcos_hat),h=1,diag=0,tau=tau),silent=T)
+    hidcos<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(Xcos),X_hat=as.matrix(Xcos_hat),h=12,diag=0,tau=tau),silent=T)
     hidBXIIARMAcos_l[[l]]<-hidcos
     
     ## Sin&Cos
     print(c(l,"BXIIARMAsincos",3))
-    hidsincos<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(X),X_hat=as.matrix(X_hat),h=1,diag=0,tau=tau),silent=T)
+    hidsincos<-try(bxiiarmaCOV.fit(y,ar=1:pq[1],ma=1:pq[2],X = as.matrix(X),X_hat=as.matrix(X_hat),h=12,diag=0,tau=tau),silent=T)
     hidBXIIARMAsincos_l[[l]]<-hidsincos
     
     ## Calculate model statistics
@@ -778,31 +794,32 @@ for(i in R){
   matsarma<-matrix(c(
     1,1,0,1,
     1,1,1,0,
-    1,1,1,1,
-    1,2,0,1,
-    1,2,1,0,
-    1,2,1,1,
-    1,3,0,1,
-    1,3,1,0,
-    1,3,1,1,
-    2,1,0,1,
-    2,1,1,0,
-    2,1,1,1,
-    2,2,0,1,
-    2,2,1,0,
-    2,2,1,1,
-    2,3,0,1,
-    2,3,1,0,
-    2,3,1,1,
-    3,1,0,1,
-    3,1,1,0,
-    3,1,1,1,
-    3,2,0,1,
-    3,2,1,0,
-    3,2,1,1,
-    3,3,0,1,
-    3,3,1,0,
-    3,3,1,1
+    1,1,1,1
+    #,
+    #1,2,0,1,
+    #1,2,1,0,
+    #1,2,1,1,
+    #1,3,0,1,
+    #1,3,1,0,
+    #1,3,1,1,
+    #2,1,0,1,
+    #2,1,1,0,
+    #2,1,1,1,
+    #2,2,0,1,
+    #2,2,1,0,
+    #2,2,1,1,
+    #2,3,0,1,
+    #2,3,1,0,
+    #2,3,1,1,
+    #3,1,0,1,
+    #3,1,1,0,
+    #3,1,1,1,
+    #3,2,0,1,
+    #3,2,1,0,
+    #3,2,1,1,
+    #3,3,0,1,
+    #3,3,1,0,
+    #3,3,1,1
   ),ncol=4,byrow=T)
   
   for(l in 1:nrow(matsarma)){
@@ -894,12 +911,10 @@ for(i in R){
   Index <- seq_len(n)
 
   X_XGBoost <- data.frame(
-    Index = Index,
-
     # Lags
     lag1  = c(NA, y[-n]),
-    lag2  = c(NA, NA, y[seq_len(n - 2)]),
-    lag3 = c(rep(NA, 3), y[seq_len(n - 3)]),
+    #lag2  = c(NA, NA, y[seq_len(n - 2)]),
+    #lag3 = c(rep(NA, 3), y[seq_len(n - 3)]),
 
     # Moving averages, using only past observations
     MA2 = c(
@@ -908,11 +923,17 @@ for(i in R){
         mean(y[(t - 2):(t - 1)]), numeric(1))
     ),
 
-    MA3 = c(
-      rep(NA, 3),
-      vapply(4:n, function(t)
-        mean(y[(t - 3):(t - 1)]), numeric(1))
-    ),
+    #MA3 = c(
+    #  rep(NA, 3),
+    #  vapply(4:n, function(t)
+    #    mean(y[(t - 3):(t - 1)]), numeric(1))
+    #),
+
+    #MA4 = c(
+    #  rep(NA, 4),
+    #  vapply(5:n, function(t)
+    #    mean(y[(t - 4):(t - 1)]), numeric(1))
+    #),
 
     # Annual seasonality
     Xsin = Xsin,
@@ -933,8 +954,10 @@ for(i in R){
 
   X_XGBoost <- as.matrix(
     dados_XGBoost[, c(
-      "Index", "lag1", "lag2", "lag3",
-      "MA2", "MA3", "Xsin", "Xcos"
+       "lag1", #"lag2", "lag3",
+      "MA2", 
+      #"MA3", "MA4",
+      "Xsin", "Xcos"
     )]
   )
 
@@ -944,8 +967,8 @@ for(i in R){
 
   # Hyperparameter combinations
   mat_XGBoost <- expand.grid(
-    max_depth = c(2, 4, 6),
-    eta = c(0.01, 0.05, 0.10),
+    max_depth = c(3, 5),
+    eta = c(0.05, 0.10),
     nrounds = c(100, 300)
   )
 
@@ -1119,20 +1142,20 @@ for(i in R){
   #### Covariate importance ####
   ############################
 
-  if (exists("final_XGBoost")) {
+  #if (exists("final_XGBoost")) {
 
-    imp_XGBoost <- xgb.importance(
-      model = final_XGBoost1
-    )
+  #  imp_XGBoost <- xgb.importance(
+  #    model = final_XGBoost1
+  #  )
 
-    print(imp_XGBoost)
+  #  print(imp_XGBoost)
 
-    xgb.plot.importance(
-      importance_matrix = imp_XGBoost,
-      measure = "Gain",
-      top_n = 15
-    )
-  }
+  #  xgb.plot.importance(
+  #    importance_matrix = imp_XGBoost,
+  #    measure = "Gain",
+  #    top_n = 15
+  #  )
+  #}
 
   
   
@@ -1246,7 +1269,7 @@ for(i in R){
     plot(y,main=nome[j],ylim=c(min(y),max(y)+0.15))
     # plot(y,main="")
     lines(final_Ray[[j]]$fitted, col=5,lty=3,lwd=1.7)
-    # lines(ts(final_GAMMA[[j]]$fitted,end = c(2023, 8),frequency = 12), col=8,lty=3.5,lwd=1.5)
+    #lines(ts(final_GAMMA[[j]]$fitted,end = c(2023, 8),frequency = 12), col=8,lty=3.5,lwd=1.5)
     lines(finalBXIIARMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
     lines(final_SARMA[[j]]$fitted, col=7,lty=5,lwd=1.8)
     lines(ts(pred_XGBoost[[j]],end = c(2023, 8),frequency = 12), col=4,lty=7,lwd=1.4)
@@ -1327,7 +1350,7 @@ for(i in R){
     # acf SARMA residuals 
     acf(ts(res_XGBoost[[j]],end = c(2023, 8),frequency = 12),main="")
     dev.off()
-    }
+}
 
 ########################
 #### final measures ####  
@@ -1393,3 +1416,9 @@ library(gt)
 # Criar uma tabela estilizada
 resultados[,] %>%
   gt()
+
+# Write in Excel
+# install.packages("writexl")
+library(writexl)
+
+write_xlsx(resultados, paste0("results","tau",tau,".xlsx"))

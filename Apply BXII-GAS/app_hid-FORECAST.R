@@ -12,20 +12,28 @@ library(psych)
 library(readr)
 library(PTSR)
 library(xtable)
-setwd("~/GitHub/BXII-GAS/BXII-GAS")
+
+# Main project folder
+if(Sys.info()["sysname"]=="Windows"){
+  path <- "C:/Users/nando/OneDrive - BTH/Fernando/BXII-GAS-1" # Windowns
+}else{
+  path <- "~/Fernando/BXII-GAS" # Ubuntu
+}
+
+setwd(file.path(path, "BXII-GAS"))
 source("GASBXIIFit.R")
 source("predict_BXII_GAS.R")
-setwd("~/GitHub/BXII-GAS/Ray-GAS/Ray-GAS-master/Ray-GAS")
+setwd(file.path(path, "Ray-GAS/Ray-GAS-master/Ray-GAS"))
 source("GASRayFit.R")
 source("predict_Ray_GAS.R")
-setwd("~/GitHub/BXII-GAS/gamma-GAS")
+setwd(file.path(path, "gamma-GAS"))
 source("GASGFit.R")
 source("predict_G_GAS.R")
-setwd("~/GitHub/BXII-GAS/BXII_ARMA")
+setwd(file.path(path, "BXII_ARMA"))
 source("bxiiarmaCOV.fit.r")
 source("bxiiarma.fit.r")
 source("predict_BXII_ARMA.R")
-setwd("~/GitHub/BXII-GAS/classic_models")
+setwd(file.path(path, "classic_models"))
 source("predict_ARMA.R")
 source("predict_ETS.R")
 source("predict_SARMA.R")
@@ -35,7 +43,8 @@ source("predict_SARMA.R")
 ############################
 
 ## Data
-Dados <- read.delim("~/GitHub/BXII-GAS/Apply BXII-GAS/Data/Dados.txt")
+setwd(file.path(path, "Apply BXII-GAS/Data"))
+Dados <- read.delim("Dados.txt")
 dados<-Dados
 dados <- dados %>% filter(X == "Selecione Tipo DH")
 dados<-as.data.frame(dados[,-2])
@@ -517,3 +526,6 @@ results_out[,c(4:7,11:14,18:21)]
 install.packages("openxlsx")
 library(openxlsx)
 write.xlsx(results, "my_file2.xlsx")
+
+
+
