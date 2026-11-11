@@ -1,5 +1,5 @@
 # Reference: BXII-GAS
-# Created by Fernando José Monteiro de Araújo (nandomonteiro418@gmail.com), September/2024
+# Created by Fernando José Monteiro de Araújo (nandomonteiro418@gmail.com), november/2026
 
 library(tidyverse)
 library(dplyr)
@@ -10,6 +10,7 @@ library(readr)
 library(xtable)
 library(VGAM)
 library(stats)
+library(PTSR)
 # GAS
 library("gasmodel")
 library(forecast)
@@ -23,15 +24,23 @@ if(Sys.info()["sysname"]=="Windows"){
   path <- "~/Fernando/BXII-GAS" # Ubuntu
 }
 
-setwd(file.path(path, "BXII-GAS"))
+source(file.path(path, "BXII-GAS"))
 source("GASBXIIFit.R")
+source("predict_BXII_GAS.R")
 setwd(file.path(path, "Ray-GAS/Ray-GAS-master/Ray-GAS"))
 source("GASRayFit.R")
+source("predict_Ray_GAS.R")
 setwd(file.path(path, "gamma-GAS"))
 source("GASGFit.R")
+source("predict_G_GAS.R")
 setwd(file.path(path, "BXII_ARMA"))
-source("bxiiarmaCOV.fit.R")
-source("bxiiarma.fit.R")
+source("bxiiarmaCOV.fit.r")
+source("bxiiarma.fit.r")
+source("predict_BXII_ARMA.R")
+setwd(file.path(path, "classic_models"))
+source("predict_ARMA.R")
+source("predict_ETS.R")
+source("predict_SARMA.R")
 
 
 ############################
@@ -61,47 +70,43 @@ Desc<-describe(dados)
 Desc
 
 #Fitted
-#dados<-dados[,-c(11,21,30:33)]
-#dados<-dados[,-c(7,9:11,14:15,21:22,24:25,27)]
-#dados<-dados[,-c(3,5:9,13,15)]
-#dados<-dados[,-c(3,4,7)]
-#dados<-dados[,c(1,2,18,19,28)]
 View(dados)
-
 datas <- seq(as.Date("2010-01-01"), as.Date("2024-08-31"), by = "day")
-R<-1:dim(dados)[2]
 
+R<-1:dim(dados)[2]
 mat<-matrix(c(rep(1,1*4)),ncol=4,byrow=T)
 mat<-matrix(c(rep(1,3),rep(2,3),rep(3,3),rep(1:3,3)),ncol=2,byrow=F)
 mat<-matrix(c(rep(1,2)),ncol=2,byrow=F)
-
-# IMPORTANT: Candidate grid for the gamma
-gamma_orders <- mat
-
-acuracia1<-array(NA,c(7,length(R),5))
+gamma_orders <- mat # Candidate grid for the gamma
 
 pv_LB_BXII<-pv_LB_Ray<-pv_LB_GAMMA<-pv_LB_BXIIARMA<-pv_LB_ETS<-pv_LB_SARMA<-pv_LB_XGBoost<-c()
 nome<-modelo<-modelo_Ray<-modelo_GAMMA<-modeloBXIIARMA<-modelo_ETS<-modelo_XGBoost<-c()
 final<-final_Ray<-final_GAMMA<-finalBXIIARMA<-final_ETS<-final_SARMA<-final_XGBoost<-list()
 res_XGBoost<-pred_XGBoost<-list()
 
-start_time <- Sys.time()
-j<-0
+s<-12
+h=12
 pvalor<-0.10
 tau<-0.5
+acuracia1<-array(NA,c(7,length(R),5)) # in sample
+out_forecast<-array(NA,c(h,6,length(R))) 
+ac<-array(NA,c(6,length(R),3)) # out of sample
+
+j<-0
 setwd(file.path(path, "Apply BXII-GAS"))
+start_time <- Sys.time()
 for(i in R){
   ################################
   #### defining the variables ####
   ################################
-  y<-na.omit(dados[,i])
-  s<-12
-  h=12
+  print(i)
+  y<-na.omit(dados[,i]) 
   y <- zoo(y, order.by = datas)
   y <- aggregate(y, as.yearmon, sum)
   y<-y/100000
   y<-ts(y[1:(length(y)-h)],frequency = s,start=c(2010,1))
   y[y==0] <- mean(y, na.rm = TRUE)
+  y_prev<-y[(length(y)[1]-h+1):length(y)[1]]
 
   t<-1:length(y)
   t_hat<-(length(y)+1):(length(y)+h)
@@ -200,26 +205,22 @@ for(i in R){
   Top_BXIIsin<-data.frame(
     Index=1:nrow(mat),AIC=aic_BXII_sin,pvalue_LB=pv_LB_BXIIsin,
     int_sig=int_sig_BXIIsin,model_sig=model_sig_BXIIsin,
-    RMSE=RMSE_BXIIsin,MAPE=MAPE_BXIIsin,MAE=MAE_BXIIsin
-  )
+    RMSE=RMSE_BXIIsin,MAPE=MAPE_BXIIsin,MAE=MAE_BXIIsin)
   
   Top_BXIIcos<-data.frame(
     Index=1:nrow(mat),AIC=aic_BXII_cos,pvalue_LB=pv_LB_BXIIcos,
     int_sig=int_sig_BXIIcos,model_sig=model_sig_BXIIcos,
-    RMSE=RMSE_BXIIcos,MAPE=MAPE_BXIIcos,MAE=MAE_BXIIcos
-  )
+    RMSE=RMSE_BXIIcos,MAPE=MAPE_BXIIcos,MAE=MAE_BXIIcos)
   
   Top_BXIIsincos<-data.frame(
     Index=1:nrow(mat),AIC=aic_BXII_sincos,pvalue_LB=pv_LB_BXIIsincos,
     int_sig=int_sig_BXIIsincos,model_sig=model_sig_BXIIsincos,
-    RMSE=RMSE_BXIIsincos,MAPE=MAPE_BXIIsincos,MAE=MAE_BXIIsincos
-  )
+    RMSE=RMSE_BXIIsincos,MAPE=MAPE_BXIIsincos,MAE=MAE_BXIIsincos)
   
   Top_BXII<-rbind(
     data.frame(Type="Sin",Top_BXIIsin),
     data.frame(Type="Cos",Top_BXIIcos),
-    data.frame(Type="SinCos",Top_BXIIsincos)
-  )
+    data.frame(Type="SinCos",Top_BXIIsincos))
   
   rownames(Top_BXII)<-NULL
   Top_BXII<-Top_BXII[order(Top_BXII$AIC),]
@@ -261,20 +262,12 @@ for(i in R){
   }
 
   ### teste plot ############################################################################################
-
-    #---------------------------------
-    # time series plot - fitted models
-    par(mfrow=c(1,1))
-    plot(y,main=nome[j],ylim=c(min(y),max(y)+0.15))
-    lines(final1$fitted, col=2,lty=2,lwd=2)
-    legend("topleft", 
-           c("Original","BXII-GAS"
-             ),
-           col = c(1,2),
-           lty= c(1,2),
-           lwd = c(1,2), bty="n", cex = 1)  
+  par(mfrow=c(1,1))
+  plot(y,main=nome[j],ylim=c(min(y),max(y)+0.15))
+  lines(final1$fitted, col=2,lty=2,lwd=2)
+  legend("topleft", c("Original","BXII-GAS"), col = c(1,2), lty= c(1,2), lwd = c(1,2), bty="n", cex = 1)  
   ###  End texte #############################################################################################
-  
+
   ##########################
   #### fitting Ray-GAS  ####
   ##########################
@@ -795,31 +788,6 @@ for(i in R){
     1,1,0,1,
     1,1,1,0,
     1,1,1,1
-    #,
-    #1,2,0,1,
-    #1,2,1,0,
-    #1,2,1,1,
-    #1,3,0,1,
-    #1,3,1,0,
-    #1,3,1,1,
-    #2,1,0,1,
-    #2,1,1,0,
-    #2,1,1,1,
-    #2,2,0,1,
-    #2,2,1,0,
-    #2,2,1,1,
-    #2,3,0,1,
-    #2,3,1,0,
-    #2,3,1,1,
-    #3,1,0,1,
-    #3,1,1,0,
-    #3,1,1,1,
-    #3,2,0,1,
-    #3,2,1,0,
-    #3,2,1,1,
-    #3,3,0,1,
-    #3,3,1,0,
-    #3,3,1,1
   ),ncol=4,byrow=T)
   
   for(l in 1:nrow(matsarma)){
@@ -913,53 +881,22 @@ for(i in R){
   X_XGBoost <- data.frame(
     # Lags
     lag1  = c(NA, y[-n]),
-    #lag2  = c(NA, NA, y[seq_len(n - 2)]),
-    #lag3 = c(rep(NA, 3), y[seq_len(n - 3)]),
-
     # Moving averages, using only past observations
     MA2 = c(
       rep(NA, 2),
       vapply(3:n, function(t)
-        mean(y[(t - 2):(t - 1)]), numeric(1))
-    ),
-
-    #MA3 = c(
-    #  rep(NA, 3),
-    #  vapply(4:n, function(t)
-    #    mean(y[(t - 3):(t - 1)]), numeric(1))
-    #),
-
-    #MA4 = c(
-    #  rep(NA, 4),
-    #  vapply(5:n, function(t)
-    #    mean(y[(t - 4):(t - 1)]), numeric(1))
-    #),
-
+        mean(y[(t - 2):(t - 1)]), numeric(1))),
     # Annual seasonality
     Xsin = Xsin,
-    Xcos = Xcos
-  )
+    Xcos = Xcos)
 
-  dados_XGBoost <- data.frame(
-    y = as.numeric(y),
-    X_XGBoost
-  )
+  dados_XGBoost <- data.frame(y = as.numeric(y),X_XGBoost)
 
   # Keep the original time index for each observation
   dados_XGBoost$Index_original <- dados_XGBoost$Index
-
   dados_XGBoost <- na.omit(dados_XGBoost)
-
   y_XGBoost <- dados_XGBoost$y
-
-  X_XGBoost <- as.matrix(
-    dados_XGBoost[, c(
-       "lag1", #"lag2", "lag3",
-      "MA2", 
-      #"MA3", "MA4",
-      "Xsin", "Xcos"
-    )]
-  )
+  X_XGBoost <- as.matrix(dados_XGBoost[, c("lag1", "MA2", "Xsin", "Xcos")])
 
   ############################
   #### Candidate models ####
@@ -1090,8 +1027,7 @@ for(i in R){
     pvalue_LB = pv_LB_XGBoost,
     RMSE = RMSE_XGBoost,
     MAPE = MAPE_XGBoost,
-    MAE = MAE_XGBoost
-  )
+    MAE = MAE_XGBoost)
 
   # Keep models that fitted successfully and have a valid RMSE
   valid_models <- vapply(
@@ -1106,7 +1042,7 @@ for(i in R){
     slice_head(n = 10)
 
   ############################
-  #### Select best model ####
+  #### Select best model #####
   ############################
 
   # Prefer models with uncorrelated forecast errors
@@ -1114,242 +1050,230 @@ for(i in R){
     filter(pvalue_LB > 0.05)
 
   if (nrow(Select_XGBoost) > 0) {
-
     Select_XGBoost <- Select_XGBoost %>%
       filter(RMSE == min(RMSE, na.rm = TRUE))
-
   } else {
-
     # Fallback: lowest cross-validation RMSE
     Select_XGBoost <- Top_XGBoost %>%
       filter(RMSE == min(RMSE, na.rm = TRUE))
   }
 
-  ############################
+  ################################
   #### Recover selected model ####
-  ############################
+  ################################
 
   if (nrow(Select_XGBoost) > 0) {
-
     id_XGBoost <- Select_XGBoost$Index[1]
-
     final_XGBoost1 <- hids_XGBoost_l[[id_XGBoost]]
+    modelo_XGBoost1 <- "XGBoost"}
 
-    modelo_XGBoost1 <- "XGBoost"
-  }
-
-  ############################
-  #### Covariate importance ####
-  ############################
-
-  #if (exists("final_XGBoost")) {
-
-  #  imp_XGBoost <- xgb.importance(
-  #    model = final_XGBoost1
-  #  )
-
-  #  print(imp_XGBoost)
-
-  #  xgb.plot.importance(
-  #    importance_matrix = imp_XGBoost,
-  #    measure = "Gain",
-  #    top_n = 15
-  #  )
-  #}
-
-  
-  
   ###########################
   #### residual analysis ####  
   ###########################
   
   pv_LB_BXII1<-Box.test(final1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_Ray1<-Box.test(final_Ray1$residuals, lag = 20, type = "Ljung")$p.value
-  pv_LB_GAMMA1 <- try(
-    Box.test(final_GAMMA1$residuals, lag = 20, type = "Ljung")$p.value,
-    silent = TRUE
-  )
-  
-  if (inherits(pv_LB_GAMMA1, "try-error")) {
-    pv_LB_GAMMA1 <- NA
-  }
+  pv_LB_GAMMA1 <- try(Box.test(final_GAMMA1$residuals, lag = 20, type = "Ljung")$p.value, silent = TRUE)
+  if (inherits(pv_LB_GAMMA1, "try-error")) {pv_LB_GAMMA1 <- NA}
   pv_LB_BXIIARMA1<-Box.test(finalBXIIARMA1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_ETS1<-Box.test(final_ETS1$residuals, lag = 20, type = "Ljung")$p.value
   pv_LB_SARMA1<-Box.test(final_SARMA1$residuals, lag = 20, type = "Ljung")$p.value
   # Predicted values
-  pred_XGBoost1 <- predict(
-    final_XGBoost1,
-    X_XGBoost
-  )
+  pred_XGBoost1 <- predict(final_XGBoost1,X_XGBoost)
   # Residuals
   res_XGBoost1 <- y_XGBoost - pred_XGBoost1
   pv_LB_XGBoost1<-Box.test(res_XGBoost1, lag = 20, type = "Ljung")$p.value
 
-  
   #############################
-  #### selecting resevoirs ####  
+  ####      in sample      ####  
   #############################
 
-    j<-j+1
-    final[[j]]<-final1
-    final_Ray[[j]]<-final_Ray1
-    final_GAMMA[[j]]<-final_GAMMA1
-    finalBXIIARMA[[j]]<-finalBXIIARMA1
-    final_ETS[[j]]<-final_ETS1
-    final_SARMA[[j]]<-final_SARMA1
-    final_XGBoost[[j]]<-final_XGBoost1
-    modelo[j]<-modelo1
-    modelo_Ray[j]<-modelo_Ray1
-    modelo_GAMMA[j]<-modelo_GAMMA1
-    modeloBXIIARMA[j]<-modeloBXIIARMA1
-    modelo_ETS[j]<-modelo_ETS1
-    modelo_XGBoost[j]<-modelo_XGBoost1
-    nome[j]<-substring(colnames(dados)[i],1,nchar(colnames(dados)[i])#-10
-                       )
-    print(nome[j])
-    pv_LB_BXII[j]<- pv_LB_BXII1
-    pv_LB_Ray[j]<- pv_LB_Ray1
-    pv_LB_GAMMA[j] <- try(
-      pv_LB_GAMMA1,
-      silent = TRUE
-    )
-    
-    if (inherits(pv_LB_GAMMA[j], "try-error")) {
-      pv_LB_GAMMA[j] <- NA
-    }
-    pv_LB_BXIIARMA[j]<-pv_LB_BXIIARMA1
-    pv_LB_ETS[j]<-pv_LB_ETS1
-    pv_LB_SARMA[j]<-pv_LB_SARMA1
-    pv_LB_XGBoost[j]<-pv_LB_XGBoost1
+  j<-j+1
 
+  final[[j]]<-final1
+  final_Ray[[j]]<-final_Ray1
+  final_GAMMA[[j]]<-final_GAMMA1
+  finalBXIIARMA[[j]]<-finalBXIIARMA1
+  final_ETS[[j]]<-final_ETS1
+  final_SARMA[[j]]<-final_SARMA1
+  final_XGBoost[[j]]<-final_XGBoost1
 
-    acuracia1[1,j,]<-c(accuracy(final[[j]]$fitted, y)[,c(2,3,5)],final[[j]]$aic,final[[j]]$bic)
-    acuracia1[2,j,]<-c(accuracy(final_Ray[[j]]$fitted, y)[,c(2,3,5)],final_Ray[[j]]$aic,final_Ray[[j]]$bic)
-    if (inherits(final_GAMMA[[j]], "try-error")){
-      acuracia1[3, j, ] <- NA
-    }else{
-      acuracia1[3, j, ] <- c(accuracy(final_GAMMA[[j]]$fitted, y)[, c(2,3,5)],
-      final_GAMMA[[j]]$aic,
-      final_GAMMA[[j]]$bic)
-    }
-    acuracia1[4,j,]<-c(accuracy(finalBXIIARMA[[j]]$fitted, y)[,c(2,3,5)],finalBXIIARMA[[j]]$aic,finalBXIIARMA[[j]]$bic)
-    acuracia1[5,j,]<-c(accuracy(final_ETS[[j]]$fitted, y)[,c(2,3,5)],final_ETS[[j]]$aic,final_ETS[[j]]$bic)
-    acuracia1[6,j,]<-c(accuracy(final_SARMA[[j]]$fitted, y)[,c(2,3,5)],final_SARMA[[j]]$aic,final_SARMA[[j]]$bic)
-    res_XGBoost[[j]]<-res_XGBoost1
-    pred_XGBoost[[j]]<-pred_XGBoost1
-    acuracia1[7,j,]<-c(accuracy(pred_XGBoost[[j]], y_XGBoost)[,c(2,3,5)],NA,NA)
+  modelo[j]<-modelo1
+  modelo_Ray[j]<-modelo_Ray1
+  modelo_GAMMA[j]<-modelo_GAMMA1
+  modeloBXIIARMA[j]<-modeloBXIIARMA1
+  modelo_ETS[j]<-modelo_ETS1
+  modelo_XGBoost[j]<-modelo_XGBoost1
 
-    
-    ###############
-    #### plots ####  
-    ###############
-    setwd(file.path(path, "Apply BXII-GAS"))
-    
-    # time series plot
-    time_series_plot<-paste0("Plots/time_series_plot",i,".pdf")
-    pdf(time_series_plot,width = w1, height = h11)
-    par(mfrow=c(1,1))
-    plot(y,main=nome[j],ylim=c(min(y),max(y)+0.15))
-    #plot(y,main="")
-    dev.off()
-    
-    # Acf plot
-    Acf_plot<-paste0("Plots/Acf_plot",i,".pdf")
-    pdf(Acf_plot,width =4, height = 4)
-    # acf  
-    par(mfrow=c(1,1))
-    acf(y,main=nome[j]#,main=""
-        )
-    dev.off()
-    #---------------------------------
-    # time series plot - fitted models
-    time_series<-paste0("Plots/time_series",i,".pdf")
-    pdf(time_series,width = w1, height = h11)
-    par(mfrow=c(1,1))
-    plot(y,main=nome[j],ylim=c(min(y),max(y)+0.15))
-    # plot(y,main="")
-    lines(final_Ray[[j]]$fitted, col=5,lty=3,lwd=1.7)
-    #lines(ts(final_GAMMA[[j]]$fitted,end = c(2023, 8),frequency = 12), col=8,lty=3.5,lwd=1.5)
-    lines(finalBXIIARMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
-    lines(final_SARMA[[j]]$fitted, col=7,lty=5,lwd=1.8)
-    lines(ts(pred_XGBoost[[j]],end = c(2023, 8),frequency = 12), col=4,lty=7,lwd=1.4)
-    lines(final_ETS[[j]]$fitted, col=3,lty=6,lwd=1.9)
-    lines(final[[j]]$fitted, col=2,lty=2,lwd=2)
-    legend("topleft", 
-           c("Original","BXII-GAS","Ray-GAS",# "gamma-GAS",
-           "BXII-ARMA","SARMA",
-             "ETS","XGBoost" 
-             ),
-           col = c(1,2,5,# 8,
-            6,7,3,4),
-           lty= c(1,2,3,# 3.5,
-            4,5,6,7),
-           lwd = c(1,2,1.7,# 1.5,
-            1.6,1.8,1.9,1.4), bty="n", cex = 1)
-    dev.off()
-    # ---------------------------------
-    # seasonality
-    months<-paste0("Plots/months",i,".pdf")
-    pdf(months,width = 10, height = 6)
-    par(mfrow=c(1,1))
-    monthplot(y,main=nome[j],ylab = "RF",base = "median")
-    dev.off()
-    
-    # ---------------------------------
-    if(sum(final[[j]]$residuals)!=(-Inf)){
-    resid_plot<-paste0("Plots/resid_plotBXII",i,".pdf")
-    pdf(resid_plot,width = 4, height = 4)
-    # acf BXII residuals 
-    acf(final[[j]]$residuals,main="")
-    dev.off()
-    }else{"BXII-GAS: It is not possible to create the chart."}
-    
-    # ---------------------------------
-    resid_plot<-paste0("Plots/resid_plotRay",i,".pdf")
-    pdf(resid_plot,width = 4, height = 4)
-    # acf Ray residuals 
-    acf(final_Ray[[j]]$residuals,main="")
-    dev.off()
-    
-    # ---------------------------------
-    
-    if (inherits(final_GAMMA[[j]], "try-error")) {
-      print("gamma-GAS: It is not possible to create the chart.")
-    }else{pdf(resid_plot, width = 4, height = 4)
-      resid_plot <- paste0("Plots/resid_plotgamma", i, ".pdf")
-      acf(final_GAMMA[[j]]$residuals, main = "")
-      dev.off()
-    }
-    
-    # ---------------------------------
-    if(sum(finalBXIIARMA[[j]]$residuals)!=(-Inf)){
-    resid_plot<-paste0("Plots/resid_plotBXIIARMA",i,".pdf")
-    pdf(resid_plot,width = 4, height = 4)
-    # acf BXIIARMA residuals 
-    acf(finalBXIIARMA[[j]]$residuals,main="")
-    dev.off()
-    }else{"BXII-ARMA: It is not possible to create the chart."}
-    
-    # ---------------------------------
-    resid_plot<-paste0("Plots/resid_plotETS",i,".pdf")
-    pdf(resid_plot,width = 4, height = 4)
-    # acf ETS residuals 
-    acf(final_ETS[[j]]$residuals,main="")
-    dev.off()
-    
-    # ---------------------------------
-    resid_plot<-paste0("Plots/resid_plotSARMA",i,".pdf")
-    pdf(resid_plot,width = 4, height = 4)
-    # acf SARMA residuals 
-    acf(final_SARMA[[j]]$residuals,main="")
-    dev.off()
+  nome[j]<-substring(colnames(dados)[i],1,nchar(colnames(dados)[i]))
+  print(nome[j])
+
+  pv_LB_BXII[j]<- pv_LB_BXII1
+  pv_LB_Ray[j]<- pv_LB_Ray1
+  pv_LB_GAMMA[j] <- try(pv_LB_GAMMA1,silent = TRUE)
+  if (inherits(pv_LB_GAMMA[j], "try-error")) {pv_LB_GAMMA[j] <- NA}
+  pv_LB_BXIIARMA[j]<-pv_LB_BXIIARMA1
+  pv_LB_ETS[j]<-pv_LB_ETS1
+  pv_LB_SARMA[j]<-pv_LB_SARMA1
+  pv_LB_XGBoost[j]<-pv_LB_XGBoost1
+
+  acuracia1[1,j,]<-c(accuracy(final[[j]]$fitted, y)[,c(2,3,5)],final[[j]]$aic,final[[j]]$bic)
+  acuracia1[2,j,]<-c(accuracy(final_Ray[[j]]$fitted, y)[,c(2,3,5)],final_Ray[[j]]$aic,final_Ray[[j]]$bic)
+  if (inherits(final_GAMMA[[j]], "try-error")){acuracia1[3, j, ] <- NA} else {
+    acuracia1[3, j, ] <- c(accuracy(final_GAMMA[[j]]$fitted, y)[, c(2,3,5)],
+    final_GAMMA[[j]]$aic,
+    final_GAMMA[[j]]$bic)}
+  acuracia1[4,j,]<-c(accuracy(finalBXIIARMA[[j]]$fitted, y)[,c(2,3,5)],finalBXIIARMA[[j]]$aic,finalBXIIARMA[[j]]$bic)
+  acuracia1[5,j,]<-c(accuracy(final_ETS[[j]]$fitted, y)[,c(2,3,5)],final_ETS[[j]]$aic,final_ETS[[j]]$bic)
+  acuracia1[6,j,]<-c(accuracy(final_SARMA[[j]]$fitted, y)[,c(2,3,5)],final_SARMA[[j]]$aic,final_SARMA[[j]]$bic)
+  res_XGBoost[[j]]<-res_XGBoost1
+  pred_XGBoost[[j]]<-pred_XGBoost1
+  acuracia1[7,j,]<-c(accuracy(pred_XGBoost[[j]], y_XGBoost)[,c(2,3,5)],NA,NA)
   
-    # ---------------------------------
-    resid_plot<-paste0("Plots/resid_plotXGBoost",i,".pdf")
-    pdf(resid_plot,width = 4, height = 4)
-    # acf SARMA residuals 
-    acf(ts(res_XGBoost[[j]],end = c(2023, 8),frequency = 12),main="")
+  #################################
+  ####      out of sample      ####  
+  #################################
+
+  prev_BXIIGAS<-final[[i]]$forecast
+  prev_RayGAS<-final_Ray[[i]]$forecast
+  prev_BXIIARMA<-finalBXIIARMA[[i]]$forecast
+  prev_ETS <- forecast(final_ETS[[i]], h = h)$mean
+  prev_SARMA <- forecast(final_SARMA[[i]], h = h)$mean
+  y_prev_mean=c(y[n-1],y[n],y_prev)
+  d_XGBoost_hat <- data.frame(
+    # Lags
+    lag1  = c(y[n], y_prev[-h]),
+    # Moving averages, using only past observations
+    MA2 = c(vapply(3:(h+2), function(t) mean(y_prev_mean[(t - 2):(t - 1)]), numeric(1))),
+    # Annual seasonality
+    Xsin = Xsin_hat,
+    Xcos = Xcos_hat)
+  X_XGBoost_hat <- as.matrix(d_XGBoost_hat[, c("lag1", "MA2", "Xsin", "Xcos")])
+  prev_XGBoost <- predict(final_XGBoost[[i]], X_XGBoost_hat)
+
+  out_forecast[,1,i] <- prev_BXIIGAS
+  out_forecast[,2,i] <- prev_RayGAS
+  if (inherits(prev_BXIIARMA, "try-error")) { out_forecast[,3,i] <- NA} else {out_forecast[,3,i] <- prev_BXIIARMA}
+  out_forecast[,4,i] <- prev_ETS
+  out_forecast[,5,i] <- prev_SARMA
+  out_forecast[,6,i] <- prev_XGBoost
+
+  # Accuracy
+  assign(paste0("y_prev",i),y_prev)
+  ac[1,i,]<- accuracy(out_forecast[,1,i], y_prev)[,c(2,3,5)]
+  ac[2,i,]<- accuracy(out_forecast[,2,i], y_prev)[,c(2,3,5)]
+  ac[3,i,]<-accuracy(out_forecast[,3,i], y_prev, na.rm = TRUE)[,c(2,3,5)]
+  ac[4,i,]<- accuracy(out_forecast[,4,i], y_prev)[,c(2,3,5)]
+  ac[5,i,]<- accuracy(out_forecast[,5,i], y_prev)[,c(2,3,5)]
+  ac[6,i,]<- accuracy(out_forecast[,6,i], y_prev, na.rm = TRUE)[,c(2,3,5)]
+  
+
+  ###############
+  #### plots ####  
+  ###############
+  setwd(file.path(path, "Apply BXII-GAS"))
+  
+  # time series plot
+  time_series_plot<-paste0("Plots/time_series_plot",i,".pdf")
+  pdf(time_series_plot,width = w1, height = h11)
+  par(mfrow=c(1,1))
+  plot(y,main=nome[j],ylim=c(min(y),max(y)+0.15))
+  dev.off()
+  
+  # Acf plot
+  Acf_plot<-paste0("Plots/Acf_plot",i,".pdf")
+  pdf(Acf_plot,width =4, height = 4)
+  # acf  
+  par(mfrow=c(1,1))
+  acf(y,main=nome[j])
+  dev.off()
+
+  #---------------------------------
+  # time series plot - fitted models
+  time_series<-paste0("Plots/time_series",i,".pdf")
+  pdf(time_series,width = w1, height = h11)
+  par(mfrow=c(1,1))
+  plot(y,main=nome[j],ylim=c(min(y),max(y)+0.15))
+  lines(final_Ray[[j]]$fitted, col=5,lty=3,lwd=1.7)
+  lines(finalBXIIARMA[[j]]$fitted, col=6,lty=4,lwd=1.6)
+  lines(final_SARMA[[j]]$fitted, col=7,lty=5,lwd=1.8)
+  lines(ts(pred_XGBoost[[j]],end = c(2023, 8),frequency = 12), col=4,lty=7,lwd=1.4)
+  lines(final_ETS[[j]]$fitted, col=3,lty=6,lwd=1.9)
+  lines(final[[j]]$fitted, col=2,lty=2,lwd=2)
+  legend("topleft", 
+          c("Original","BXII-GAS","Ray-GAS","BXII-ARMA","SARMA","ETS","XGBoost"),
+          col = c(1,2,5,6,7,3,4),
+          lty= c(1,2,3,4,5,6,7),
+          lwd = c(1,2,1.7,1.6,1.8,1.9,1.4), bty="n", cex = 1)
+  dev.off()
+
+  # ---------------------------------
+  # seasonality
+  months<-paste0("Plots/months",i,".pdf")
+  pdf(months,width = 10, height = 6)
+  par(mfrow=c(1,1))
+  monthplot(y,main=nome[j],ylab = "RF",base = "median")
+  dev.off()
+  
+  # ---------------------------------
+  if(sum(final[[j]]$residuals)!=(-Inf)){
+  resid_plot<-paste0("Plots/resid_plotBXII",i,".pdf")
+  pdf(resid_plot,width = 4, height = 4)
+  # acf BXII residuals 
+  acf(final[[j]]$residuals,main="")
+  dev.off()
+  }else{"BXII-GAS: It is not possible to create the chart."}
+  
+  # ---------------------------------
+  #resid_plot<-paste0("Plots/resid_plotRay",i,".pdf")
+  #pdf(resid_plot,width = 4, height = 4)
+  # acf Ray residuals 
+  #acf(final_Ray[[j]]$residuals,main="")
+  #dev.off()
+  
+  # ---------------------------------
+  #if(sum(finalBXIIARMA[[j]]$residuals)!=(-Inf)){
+  #resid_plot<-paste0("Plots/resid_plotBXIIARMA",i,".pdf")
+  #pdf(resid_plot,width = 4, height = 4)
+  # acf BXIIARMA residuals 
+  #acf(finalBXIIARMA[[j]]$residuals,main="")
+  #dev.off()
+  #}else{"BXII-ARMA: It is not possible to create the chart."}
+  
+  # ---------------------------------
+  #resid_plot<-paste0("Plots/resid_plotETS",i,".pdf")
+  #pdf(resid_plot,width = 4, height = 4)
+  # acf ETS residuals 
+  #acf(final_ETS[[j]]$residuals,main="")
+  #dev.off()
+  
+  # ---------------------------------
+  #resid_plot<-paste0("Plots/resid_plotSARMA",i,".pdf")
+  #pdf(resid_plot,width = 4, height = 4)
+  # acf SARMA residuals 
+  #acf(final_SARMA[[j]]$residuals,main="")
+  #dev.off()
+
+  # ---------------------------------
+  #resid_plot<-paste0("Plots/resid_plotXGBoost",i,".pdf")
+  #pdf(resid_plot,width = 4, height = 4)
+  # acf SARMA residuals 
+  #acf(ts(res_XGBoost[[j]],end = c(2023, 8),frequency = 12),main="")
+  #dev.off()
+    
+  # Forecast ------------------
+  forecast <- paste0("Plots/forecast", i, ".pdf")
+  if (sum(is.na(out_forecast[,1,i]))==0 && sum(is.infinite(out_forecast[,1,i]))==0) {
+    pdf(forecast,width = 8, height = 4)
+    plot(ts(y_prev,frequency = s,start=c(2023,9)),ylab="RF",ylim=c(min(y_prev,out_forecast[,1,i]),0.25+max(y_prev,out_forecast[,1,i])),type = "l")
+    lines(ts(out_forecast[,1,i],frequency = s,start=c(2023,9)),col=2,lty=2,lwd=2)
+    legend("topright", c("Original","BXII-GAS"), col = c(1,2), lty= c(1,2), lwd = c(1,2), bty="n", cex = 1)
     dev.off()
+  }
+  plot(ts(y_prev,frequency = s,start=c(2023,9)),ylab="RF",ylim=c(min(y_prev,out_forecast[,1,i]),0.25+max(y_prev,out_forecast[,1,i])),type = "l")
+  lines(ts(out_forecast[,1,i],frequency = s,start=c(2023,9)),col=2,lty=2,lwd=2)
+  legend("topright", c("Original","BXII-GAS"), col = c(1,2), lty= c(1,2), lwd = c(1,2), bty="n", cex = 1)
+  
 }
 
 ########################
@@ -1402,6 +1326,28 @@ results<-data.frame(
   )
 rownames(results)<-nome
 
+results_out<-data.frame(
+  MAE_BXII_out=ac[1,,2],
+  MAE_Ray_out=ac[2,,2],
+  MAE_BXIIARMA_out=ac[3,,2],
+  MAE_ETS_out=ac[4,,2],
+  MAE_SARMA_out=ac[5,,2],
+  MAE_XGboost_out=ac[6,,2],
+  RMSE_BXII_out=ac[1,,1],
+  RMSE_Ray_out=ac[2,,1],
+  RMSE_BXIIARMA_out=ac[3,,1],
+  RMSE_ETS_out=ac[4,,1],
+  RMSE_SARMA_out=ac[5,,1],
+  RMSE_XGboost_out=ac[6,,1],
+  MAPE_BXII_out=ac[1,,3],
+  MAPE_Ray_out=ac[2,,3],
+  MAPE_BXIIARMA_out=ac[3,,3],
+  MAPE_ETS_out=ac[4,,3],
+  MAPE_SARMA_out=ac[5,,3],
+  MAPE_XGboost_out=ac[6,,3]
+)
+rownames(results_out)<-nome
+
 setwd(file.path(path, "Apply BXII-GAS"))
 saving<-paste0("app_hid_new","tau",tau,".RData")
 save.image(saving)
@@ -1409,16 +1355,25 @@ end_time <- Sys.time()
 duration<-(end_time - start_time)
 print(duration)
 
-resultados<-results
-resultados<-round(resultados,4)
-library(gt)
 
-# Criar uma tabela estilizada
-resultados[,] %>%
+library(gt)
+results<-round(results,4)
+
+# In sample
+results[,] %>%
+  gt()
+
+
+results_out<-round(results_out,4)
+
+# Out of sample
+results_out %>%
   gt()
 
 # Write in Excel
 # install.packages("writexl")
 library(writexl)
 
-write_xlsx(resultados, paste0("results","tau",tau,".xlsx"))
+write_xlsx(results, paste0("results","tau",tau,".xlsx"))
+write_xlsx(results_out, paste0("results_out","tau",tau,".xlsx"))
+
