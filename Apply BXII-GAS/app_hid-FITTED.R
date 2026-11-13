@@ -687,10 +687,6 @@ for(i in R){
   Top_BXIIARMA<-Top_BXIIARMA[order(Top_BXIIARMA$AIC),]
   
   ## Select the best model
-
-  Top_BXIIARMA <- Top_BXIIARMA %>%
-    filter(!is.na(model_sig))  
-    
   # 1. Selecionar os 10 melhores modelos pelo menor AIC
   Top_BXIIARMA <- Top_BXIIARMA %>%
     arrange(AIC) %>%
@@ -733,8 +729,9 @@ for(i in R){
   #### fitting ETS #########
   ##########################
   
-  ets_models <- c("ANN","AAN","AAdN","AAA","AAdA",
-                  "MNN","MAN","MAdN","MNA","MAM","MAdA","ZZZ")
+  ets_models <- c("AAA","AAM","AMM",
+                  "MMM","MAA","MMA",
+                  "AMA","MAM")
   
   ets_l <- list()
   aic_ETS <- RMSE_ETS <- MAE_ETS <- MAPE_ETS <- c()
@@ -800,16 +797,7 @@ for(i in R){
   matsarma<-matrix(c(
     1,1,0,1,
     1,1,1,0,
-    1,1,1,1,
-    1,2,0,1,
-    1,2,1,0,
-    1,2,1,1,
-    2,1,1,0,
-    2,1,0,1,
-    2,1,1,1,
-    2,2,0,1,
-    2,2,1,0,
-    2,2,1,1
+    1,1,1,1
   ),ncol=4,byrow=T)
   
   for(l in 1:nrow(matsarma)){
