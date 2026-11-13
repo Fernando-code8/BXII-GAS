@@ -48,19 +48,47 @@ h11<-6 # height for plots
 
 ## Data
 setwd(file.path(path, "Apply BXII-GAS/Data"))
-Dados <- read.delim("Dados.txt")
-dados<-Dados
-dados <- dados %>% filter(X == "Selecione Tipo DH")
-dados<-as.data.frame(dados[,-2])
-dados<-t(dados)
-colnames(dados) <- as.character(dados[1, ])
-dados <- dados[-c(1,2), ]
-dados<-data.frame(dados)
+
+files <- list.files(
+  setwd(file.path(path, "Apply BXII-GAS/Data")),
+  pattern = "\\.csv$",
+  full.names = TRUE
+)
+
+Dados <- lapply(files, read.csv2) %>%
+  bind_rows(.id = "Arquivo")
+
+dados<-Dados[,c(3,8,11,15)]
+dados <- dados %>% filter(nom_subsistema == c("Nordeste","Sul"))
+dados<-as.data.frame(dados)
+dados <- dados[,-1] %>%
+  pivot_wider(
+    names_from = nom_reservatorio,
+    values_from = val_vazaoafluente
+  )
+dados<-data.frame(dados[,-1])
 str(dados)
 dados <- data.frame(lapply(dados, as.numeric))
 dim(dados)
-# View(dados)
 sum(is.na(dados))
+datas <- seq(as.Date("2010-01-01"), as.Date("2026-11-12"), by = "day")
+length(datas)
+
+
+#Dados <- read.delim("Dados.txt")
+
+#dados<-Dados
+#dados <- dados %>% filter(X == "Selecione Tipo DH")
+#dados<-as.data.frame(dados[,-2])
+#dados<-t(dados)
+#colnames(dados) <- as.character(dados[1, ])
+#dados <- dados[-c(1,2), ]
+#dados<-data.frame(dados)
+#str(dados)
+#dados <- data.frame(lapply(dados, as.numeric))
+#dim(dados)
+# View(dados)
+#sum(is.na(dados))
 
 #Descriptive statistics
 Desc<-describe(dados)
@@ -68,7 +96,6 @@ Desc
 
 #Fitted
 View(dados)
-datas <- seq(as.Date("2010-01-01"), as.Date("2024-08-31"), by = "day")
 
 R<-1:dim(dados)[2]
 mat<-matrix(c(rep(1,1*4)),ncol=4,byrow=T)
@@ -97,8 +124,10 @@ for(i in R){
   #### defining the variables ####
   ################################
   print(i)
-  y<-na.omit(dados[,i]) 
+  y<-dados[,i]
   y <- zoo(y, order.by = datas)
+  y<-na.omit(y) 
+  
   y <- aggregate(y, as.yearmon, mean)
   y<-y/1000
   plot(y)
