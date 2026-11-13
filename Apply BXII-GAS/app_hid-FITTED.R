@@ -31,8 +31,8 @@ setwd(file.path(path, "gamma-GAS"))
 source("GASGFit.R")
 source("predict_G_GAS.R")
 setwd(file.path(path, "BXII_ARMA"))
-source("bxiiarmaCOV.fit.r")
-source("bxiiarma.fit.r")
+source("bxiiarmaCOV.fit.R")
+source("bxiiarma.fit.R")
 source("predict_BXII_ARMA.R")
 setwd(file.path(path, "classic_models"))
 source("predict_ARMA.R")
@@ -74,6 +74,7 @@ R<-1:dim(dados)[2]
 mat<-matrix(c(rep(1,1*4)),ncol=4,byrow=T)
 mat<-matrix(c(rep(1,3),rep(2,3),rep(3,3),rep(1:3,3)),ncol=2,byrow=F)
 mat<-matrix(c(rep(1,2),rep(2,2),rep(1:2,2)),ncol=2,byrow=F)
+mat<-matrix(c(rep(1,1*2)),ncol=2,byrow=T)
 gamma_orders <- mat # Candidate grid for the gamma
 
 pv_LB_BXII<-pv_LB_Ray<-pv_LB_GAMMA<-pv_LB_BXIIARMA<-pv_LB_ETS<-pv_LB_SARMA<-c()
@@ -167,7 +168,7 @@ for(i in R){
         aic<-round(fit$aic,4)
         pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
         int_sig<-as.numeric(fit$model[1,4]<pvalor)
-        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<pvalor))
+        model_sig<-as.numeric(sum(fit$model[2:nrow(fit$model),4]<pvalor)==length(2:nrow(fit$model)))
         RMSE<-accuracy(y,fit$fitted)[,2]
         MAE<-accuracy(y,fit$fitted)[,3]
         MAPE<-accuracy(y,fit$fitted)[,5]
@@ -321,7 +322,7 @@ for(i in R){
         aic<-round(fit$aic,4)
         pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
         int_sig<-as.numeric(fit$model[1,4]<pvalor)
-        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<pvalor))
+        model_sig<-as.numeric(sum(fit$model[2:nrow(fit$model),4]<pvalor)==length(2:nrow(fit$model)))
         RMSE<-accuracy(y,fit$fitted)[,2]
         MAE<-accuracy(y,fit$fitted)[,3]
         MAPE<-accuracy(y,fit$fitted)[,5]
@@ -471,7 +472,7 @@ for(i in R){
         aic<-round(fit$aic,4)
         pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
         int_sig<-as.numeric(fit$model[1,4]<pvalor)
-        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<pvalor))
+        model_sig<-as.numeric(sum(fit$model[2:nrow(fit$model),4]<pvalor)==length(2:nrow(fit$model)))
         RMSE<-accuracy(y,fit$fitted)[,2]
         MAE<-accuracy(y,fit$fitted)[,3]
         MAPE<-accuracy(y,fit$fitted)[,5]
@@ -623,7 +624,7 @@ for(i in R){
         aic<-round(fit$aic,4)
         pv<-round(Box.test(fit$residuals,lag=20,type="Ljung")$p.value,4)
         int_sig<-as.numeric(fit$model[1,4]<pvalor)
-        model_sig<-as.numeric(all(fit$model[2:nrow(fit$model),4]<pvalor))
+        model_sig<-as.numeric(sum(fit$model[2:nrow(fit$model),4]<pvalor)==length(2:nrow(fit$model)))
         RMSE<-accuracy(y,fit$fitted)[,2]
         MAE<-accuracy(y,fit$fitted)[,3]
         MAPE<-accuracy(y,fit$fitted)[,5]
@@ -838,8 +839,8 @@ for(i in R){
       
       aic_SARMA[l]<-round(fit$aic,4)
       pv_LB_SARMAmodel[l]<-round(Box.test(residuals(fit),lag=20,type="Ljung")$p.value,4)
-      int_sig_SARMA[l]<-as.numeric(coeftest(fit)[1,4]<pvalor)
-      model_sig_SARMA[l]<-as.numeric(all(coeftest(fit)[2:nrow(coeftest(fit)),4]<pvalor))
+      int_sig_SARMA[l]<-as.numeric(coeftest(fit)[nrow(coeftest(fit)),4]<pvalor)
+      model_sig_SARMA[l]<-as.numeric(sum(coeftest(fit)[1:(nrow(coeftest(fit))-1),4]<pvalor)==(nrow(coeftest(fit))-1))
       acc<-accuracy(fit)
       RMSE_SARMA[l]<-acc[1,"RMSE"]
       MAE_SARMA[l]<-acc[1,"MAE"]
